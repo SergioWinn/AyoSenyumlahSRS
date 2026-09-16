@@ -42,7 +42,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .theme-toggle { background: transparent; border-color: var(--color-rule-2); border-radius: 50%; flex: 0 0 auto; font-size: var(--text-md); height: 2.75rem; padding: 0; width: 2.75rem; }
 .intro {
   align-items: end; display: grid; gap: var(--space-xl); grid-template-columns: minmax(0, 1.5fr) minmax(16rem, .5fr);
-  margin: 0 auto; max-width: var(--page-max); min-height: min(34rem, 68svh); padding: var(--space-2xl) var(--page-gutter) var(--space-3xl);
+  margin: 0 auto; max-width: var(--page-max); min-height: 20rem; padding: var(--space-2xl) var(--page-gutter);
 }
 .intro-kicker { color: var(--color-accent-deep); font-size: var(--text-sm); font-weight: 650; letter-spacing: .04em; margin: 0 0 var(--space-lg); text-transform: uppercase; }
 .intro h1 { font-family: var(--font-display); font-size: var(--text-display); font-weight: 590; letter-spacing: -.065em; line-height: .96; margin: 0; min-width: 0; overflow-wrap: anywhere; text-wrap: balance; }

@@ -122,8 +122,8 @@ export default function ScheduleApp() {
 
     <main>
       <section className="intro" aria-labelledby="page-title">
-        <div><p className="intro-kicker">Jadwal barengan komunitas</p><h1 id="page-title">Datang sendiri,<br />pulang barengan.</h1></div>
-        <p className="intro-copy">Cari teman di sesi 2-Shot dan Meet &amp; Greet yang sama. Satu timetable untuk JKT48 dan AKB48.</p>
+        <div><p className="intro-kicker">2-Shot &amp; Meet and Greet</p><h1 id="page-title">Jadwal komunitas.</h1></div>
+        <p className="intro-copy">Lihat member, jalur, dan teman komunitas yang hadir di setiap sesi JKT48 dan AKB48.</p>
       </section>
 
       <section className="workspace" id="jadwal" aria-labelledby="schedule-title">
@@ -153,7 +153,7 @@ export default function ScheduleApp() {
       </section>
     </main>
 
-    <footer className="site-footer"><p>Ketemu di venue. Jangan sendirian.</p><a href="/admin">Admin</a></footer>
+    <footer className="site-footer"><p>Jadwal komunitas JKT48 &amp; AKB48.</p><a href="/admin">Admin</a></footer>
 
     <dialog className="input-dialog" ref={dialogRef} onClose={() => setFeedback("")}>
       <form method="dialog" className="dialog-top"><div><span>Jadwal komunitas</span><h2>Ikut sesi mana?</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>
