@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CSV_COLUMNS, parseScheduleCsv } from "../lib/csv";
+import { memberPhotoUrl } from "../lib/member-photos";
 
 const ALL = "Semua";
 const TICKET_TABS = ["2-Shot", "Meet & Greet"];
@@ -13,6 +14,15 @@ function includes(value, query) {
 
 function unique(values) {
   return [...new Set(values.filter(Boolean))];
+}
+
+function MemberPhoto({ slot }) {
+  const url = memberPhotoUrl(slot.member_name, slot.group_name);
+  const initials = slot.member_name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  return <div className="member-photo" aria-hidden="true">
+    {url && <img src={url} alt="" width="180" height="180" loading="lazy" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.nextElementSibling.hidden = false; }} />}
+    <span hidden={Boolean(url)}>{initials || "?"}</span>
+  </div>;
 }
 
 function downloadTemplate() {
@@ -128,7 +138,7 @@ export default function ScheduleApp() {
           : data.error ? <div className="state-panel error-text"><strong>Jadwal gagal dimuat.</strong><p>{data.error}</p><button className="secondary-button" onClick={load}>Coba lagi</button></div>
           : !data.event ? <div className="state-panel"><strong>Belum ada event aktif.</strong><p>Aktifkan satu event dari Supabase, lalu sinkronkan sumbernya.</p></div>
           : !grouped.length ? <div className="state-panel"><strong>Tidak ada jadwal yang cocok.</strong><p>Ubah filter atau kata pencarian.</p></div>
-          : <div className="session-list" id="session-cards" role="tabpanel" aria-label={ticket}>{grouped.map(([sessionName, slots]) => <section className="session-card" key={sessionName}><header className="session-label"><div><h3>{sessionName}</h3><span>{ticket}</span></div><span>{slots.length} member</span></header><div className="slot-list">{slots.map((slot) => <article className="slot-row" key={slot.id}><div className="slot-member"><h4>{slot.member_name}</h4><span>{slot.group_name} · {slot.lane_label || "Jalur menyusul"}</span></div><div className="slot-people">{slot.schedules?.length ? slot.schedules.map((item) => <span key={item.id}>{item.participant_name}</span>) : <small>Belum ada teman</small>}</div><button className="add-slot" aria-label={`Ikut jadwal ${slot.member_name}, ${sessionName}`} onClick={() => openInput(slot.id)}>+</button></article>)}</div></section>)}</div>}
+          : <div className="session-list" id="session-cards" role="tabpanel" aria-label={ticket}>{grouped.map(([sessionName, slots]) => <section className="session-group" key={sessionName}><header className="session-label"><div><h3>{sessionName}</h3><span>{ticket}</span></div><span>{slots.length} member</span></header><div className="member-grid">{slots.map((slot) => <article className="member-card" key={slot.id}><span className="lane-label">{slot.lane_label || "Jalur menyusul"}</span><MemberPhoto slot={slot} /><div className="slot-member"><h4>{slot.member_name}</h4><span>{slot.group_name}</span></div><div className="slot-people"><small>{slot.schedules?.length ? `${slot.schedules.length} teman di sesi ini` : "Belum ada teman"}</small>{slot.schedules?.map((item) => <span key={item.id}>{item.participant_name}</span>)}</div><button className="add-slot" aria-label={`Ikut jadwal ${slot.member_name}, ${sessionName}`} onClick={() => openInput(slot.id)}>+ Ikut sesi</button></article>)}</div></section>)}</div>}
       </section>
     </main>
 

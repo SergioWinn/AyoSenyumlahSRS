@@ -5,6 +5,8 @@ const slots = [
   { id: "1", session_label: "Sesi 1", lane_label: "Jalur 3", member_name: "Freya", group_name: "JKT48", ticket_type: "Meet & Greet", schedules: [{ id: "a", participant_name: "Sergio" }, { id: "b", participant_name: "Raka" }] },
   { id: "2", session_label: "Sesi 1", lane_label: "Jalur 8", member_name: "Erii", group_name: "AKB48", ticket_type: "2-Shot", schedules: [{ id: "c", participant_name: "Nadia" }] },
   { id: "3", session_label: "Sesi 2", lane_label: "Jalur 5", member_name: "Fiony", group_name: "JKT48", ticket_type: "2-Shot", schedules: [] },
+  { id: "4", session_label: "Sesi 1", lane_label: "Jalur 2", member_name: "Gracie", group_name: "JKT48", ticket_type: "2-Shot", schedules: [{ id: "d", participant_name: "Raka" }] },
+  { id: "5", session_label: "Sesi 2", lane_label: "Jalur 7", member_name: "Ekin", group_name: "JKT48", ticket_type: "2-Shot", schedules: [{ id: "e", participant_name: "Sergio" }] },
 ];
 const consoleErrors = [];
 
@@ -19,6 +21,7 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   const page = await browser.newPage({ viewport: { width, height }, reducedMotion });
   page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(`${name}: ${message.text()}`); });
   await page.route("**/api/timetable", (route) => route.fulfill({ json: { configured: true, event: { name: "Festival Oktober", event_date: "2026-10-24", venue: "Jakarta" }, slots } }));
+  await page.route("https://wsrv.nl/**", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" fill="#ead9d2"/><circle cx="90" cy="70" r="42" fill="#d6a68f"/><path d="M35 180c5-48 105-48 110 0" fill="#a52a22"/><path d="M48 62c8-51 79-55 88 2-28-5-54-22-88-2" fill="#251a17"/></svg>' }));
   await page.goto("http://localhost:3000", { waitUntil: "networkidle" });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 1) throw new Error(`${name}: overflow horizontal ${overflow}px`);
