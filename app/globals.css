@@ -127,6 +127,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .source-list { border-top: var(--rule-hair) solid var(--color-rule-2); margin-top: var(--space-2xl); }
 .source-row { align-items: center; border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; justify-content: space-between; padding: var(--space-lg) 0; }
 .source-row div { display: grid; }
+.source-row .source-actions { align-items: center; display: flex; gap: var(--space-sm); }
 .source-row small { color: var(--color-neutral); }
 .error-text { color: var(--color-error) !important; }
 

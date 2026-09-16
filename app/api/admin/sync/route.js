@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdmin } from "../../../../lib/admin";
-import { parseBonusPayload } from "../../../../lib/jkt48";
 import { createSecretClient } from "../../../../lib/supabase";
+import { saveSourceSnapshot } from "../../../../lib/sync-source";
 
 export async function POST(request) {
   if (!await getAdmin()) return NextResponse.json({ error: "Sesi admin tidak valid." }, { status: 401 });
@@ -24,16 +24,8 @@ export async function POST(request) {
       });
       if (!response.ok) throw new Error(`API JKT48 merespons ${response.status}.`);
       const payload = await response.json();
-      const slots = parseBonusPayload(payload);
-      if (!slots.length) throw new Error("API tidak berisi sesi. Data lama dipertahankan.");
-      const { error: syncError } = await supabase.rpc("sync_event_source", {
-        p_source_id: source.id, p_payload: payload, p_slots: slots,
-      });
-      if (syncError) throw syncError;
-      await supabase.from("event_sources").update({
-        sync_status: "success", last_success_at: new Date().toISOString(), sync_error: null,
-      }).eq("id", source.id);
-      results.push({ id: source.id, ok: true, count: slots.length });
+      const count = await saveSourceSnapshot(supabase, source.id, payload);
+      results.push({ id: source.id, ok: true, count });
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Sinkronisasi gagal.";
       await supabase.from("event_sources").update({
