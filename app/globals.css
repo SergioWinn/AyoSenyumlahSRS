@@ -123,6 +123,11 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .admin-header { align-items: end; display: flex; justify-content: space-between; margin-top: var(--space-2xl); }
 .admin-header .wordmark { display: inline-block; margin-bottom: var(--space-2xl); }
 .admin-header p { color: var(--color-neutral); }
+.admin-cookie { display: grid; gap: var(--space-xs); margin-top: var(--space-xl); max-width: 38rem; }
+.admin-cookie span { font-weight: 650; }
+.admin-cookie input { background: var(--color-surface); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-card); min-height: 3rem; outline: 2px solid transparent; outline-offset: 1px; padding: 0 var(--space-md); }
+.admin-cookie input:focus-visible { outline-color: var(--color-focus); }
+.admin-cookie small { color: var(--color-neutral); }
 .notice { background: var(--color-accent-soft); color: var(--color-accent-deep); padding: var(--space-md); }
 .source-list { border-top: var(--rule-hair) solid var(--color-rule-2); margin-top: var(--space-2xl); }
 .source-row { align-items: center; border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; justify-content: space-between; padding: var(--space-lg) 0; }

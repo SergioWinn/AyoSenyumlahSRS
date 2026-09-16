@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdmin } from "../../../../lib/admin";
+import { buildJkt48Cookie, jkt48RequestHeaders } from "../../../../lib/jkt48";
 import { createSecretClient } from "../../../../lib/supabase";
 import { saveSourceSnapshot } from "../../../../lib/sync-source";
 
@@ -7,6 +8,12 @@ export async function POST(request) {
   if (!await getAdmin()) return NextResponse.json({ error: "Sesi admin tidak valid." }, { status: 401 });
   const supabase = createSecretClient();
   const body = await request.json().catch(() => ({}));
+  let cookie;
+  try {
+    cookie = buildJkt48Cookie(body?.waitingRoomCookie || process.env.JKT48_COOKIE || "");
+  } catch (caught) {
+    return NextResponse.json({ error: caught.message }, { status: 400 });
+  }
   let query = supabase.from("event_sources").select("id,exclusive_code");
   if (body?.sourceId) query = query.eq("id", body.sourceId);
   const { data: sources, error } = await query;
@@ -20,9 +27,9 @@ export async function POST(request) {
       }).eq("id", source.id);
       const response = await fetch(`https://jkt48.com/api/v1/exclusives/${encodeURIComponent(source.exclusive_code)}/bonus?lang=id`, {
         cache: "no-store",
-        headers: { accept: "application/json", "user-agent": "AyoSenyumlah/1.0" },
+        headers: jkt48RequestHeaders(cookie),
       });
-      if (!response.ok) throw new Error(`API JKT48 merespons ${response.status}.`);
+      if (!response.ok) throw new Error(`API JKT48 merespons ${response.status}${response.status === 403 ? ". Cookie Waiting Room mungkin dibutuhkan atau sudah kedaluwarsa" : ""}.`);
       const payload = await response.json();
       const count = await saveSourceSnapshot(supabase, source.id, payload);
       results.push({ id: source.id, ok: true, count });
