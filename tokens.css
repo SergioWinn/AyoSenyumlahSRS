@@ -20,6 +20,9 @@
   --color-error: oklch(47% 0.18 25);
   --color-error-soft: oklch(94% 0.032 25);
   --color-shadow: oklch(24% 0.018 45 / 0.08);
+  --color-overlay: oklch(14% 0.018 45);
+  --color-footer-bg: var(--color-ink);
+  --color-footer-ink: var(--color-paper);
 
   --font-display: "Bricolage Grotesque Variable", "Arial Narrow", sans-serif;
   --font-body: "Aptos", "Segoe UI", Arial, sans-serif;
@@ -66,4 +69,31 @@
   --z-sticky: 200;
   --z-modal: 400;
   --z-toast: 500;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: oklch(17% 0.014 45);
+  --color-paper-2: oklch(21% 0.016 45);
+  --color-paper-3: oklch(26% 0.018 45);
+  --color-surface: oklch(19% 0.014 45);
+  --color-ink: oklch(94% 0.01 72);
+  --color-ink-2: oklch(86% 0.012 72);
+  --color-neutral: oklch(70% 0.014 65);
+  --color-muted: oklch(76% 0.012 65);
+  --color-rule: oklch(31% 0.018 45);
+  --color-rule-2: oklch(43% 0.025 45);
+  --color-accent: oklch(67% 0.16 28);
+  --color-accent-deep: oklch(78% 0.12 28);
+  --color-accent-soft: oklch(27% 0.055 28);
+  --color-accent-ink: oklch(16% 0.025 28);
+  --color-focus: oklch(72% 0.16 28);
+  --color-success: oklch(68% 0.11 150);
+  --color-success-soft: oklch(25% 0.045 150);
+  --color-error: oklch(72% 0.15 25);
+  --color-error-soft: oklch(26% 0.055 25);
+  --color-shadow: oklch(4% 0.01 45 / 0.35);
+  --color-overlay: oklch(5% 0.01 45);
+  --color-footer-bg: oklch(12% 0.012 45);
+  --color-footer-ink: oklch(94% 0.01 72);
 }

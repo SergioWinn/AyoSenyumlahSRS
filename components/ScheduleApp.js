@@ -46,6 +46,7 @@ export default function ScheduleApp() {
   const [name, setName] = useState("");
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
+  const [theme, setTheme] = useState("light");
 
   const load = useCallback(async () => {
     try {
@@ -57,6 +58,7 @@ export default function ScheduleApp() {
     }
   }, []);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { setTheme(document.documentElement.dataset.theme || "light"); }, []);
 
   const sessions = useMemo(() => unique(data.slots.filter((slot) => slot.ticket_type === ticket).map((slot) => slot.session_label)).sort(naturalCollator.compare), [data.slots, ticket]);
   const visible = useMemo(() => data.slots.filter((slot) =>
@@ -105,10 +107,17 @@ export default function ScheduleApp() {
     setFeedback("Ringkasan disalin.");
   }
 
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem("theme", next);
+    setTheme(next);
+  }
+
   return <>
     <header className="site-header">
       <a className="wordmark" href="#jadwal">Ayo Senyumlah<span aria-hidden="true">.</span></a>
-      <nav aria-label="Navigasi utama"><a href="#jadwal">Jadwal</a><button className="primary-button" onClick={() => openInput()}>Isi jadwal</button></nav>
+      <nav aria-label="Navigasi utama"><a href="#jadwal">Jadwal</a><button className="theme-toggle" type="button" aria-label={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} title={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} onClick={toggleTheme}><span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span></button><button className="primary-button" onClick={() => openInput()}>Isi jadwal</button></nav>
     </header>
 
     <main>
@@ -118,7 +127,7 @@ export default function ScheduleApp() {
       </section>
 
       <section className="workspace" id="jadwal" aria-labelledby="schedule-title">
-        <div className="workspace-heading"><div><h2 id="schedule-title">{data.event?.name ?? "Jadwal event"}</h2><p>{data.event ? [data.event.event_date && new Date(`${data.event.event_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }), data.event.venue].filter(Boolean).join(" · ") : "2-Shot dan Meet & Greet"}</p></div><button className="primary-button desktop-input" onClick={() => openInput()}>+ Isi jadwal</button></div>
+        <div className="workspace-heading"><div><h2 id="schedule-title">{data.event?.name ?? "Jadwal event"}</h2><p>{data.event ? [data.event.event_date && new Date(`${data.event.event_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }), data.event.venue].filter(Boolean).join(" · ") : "2-Shot dan Meet & Greet"}</p></div></div>
 
         <div className="schedule-tabs" role="tablist" aria-label="Tipe tiket">
           {TICKET_TABS.map((value) => <button key={value} role="tab" aria-selected={ticket === value} aria-controls="session-cards" onClick={() => { setTicket(value); setSession(ALL); }}>{value}<span>{unique(data.slots.filter((slot) => slot.ticket_type === value).map((slot) => slot.session_label)).length} sesi</span></button>)}

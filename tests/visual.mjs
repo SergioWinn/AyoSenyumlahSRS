@@ -23,8 +23,14 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   await page.route("**/api/timetable", (route) => route.fulfill({ json: { configured: true, event: { name: "Festival Oktober", event_date: "2026-10-24", venue: "Jakarta" }, slots } }));
   await page.route("https://wsrv.nl/**", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" fill="#ead9d2"/><circle cx="90" cy="70" r="42" fill="#d6a68f"/><path d="M35 180c5-48 105-48 110 0" fill="#a52a22"/><path d="M48 62c8-51 79-55 88 2-28-5-54-22-88-2" fill="#251a17"/></svg>' }));
   await page.goto("http://localhost:3000", { waitUntil: "networkidle" });
+  if (await page.getByRole("button", { name: "Isi jadwal", exact: true }).count() !== 1) throw new Error(`${name}: tombol Isi jadwal terduplikasi.`);
   const firstSessionLanes = await page.locator(".session-group").first().locator(".lane-label").allTextContents();
   if (firstSessionLanes.join(",") !== "Jalur 2,Jalur 8") throw new Error(`${name}: urutan jalur tidak natural (${firstSessionLanes.join(", ")})`);
+  if (name === "reduced-motion") {
+    await page.getByRole("button", { name: "Gunakan tema gelap" }).click();
+    if (await page.locator("html").getAttribute("data-theme") !== "dark") throw new Error("Toggle tema tidak mengaktifkan mode gelap.");
+    if (await page.evaluate(() => localStorage.getItem("theme")) !== "dark") throw new Error("Pilihan tema tidak tersimpan.");
+  }
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 1) throw new Error(`${name}: overflow horizontal ${overflow}px`);
   await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/${name}.png`, fullPage: true });

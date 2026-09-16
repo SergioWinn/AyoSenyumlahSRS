@@ -32,13 +32,14 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .site-header nav { align-items: center; display: flex; gap: var(--space-lg); }
 .site-header nav > a { color: var(--color-muted); font-size: var(--text-sm); text-decoration: none; }
 
-.primary-button, .secondary-button, .quiet-button, .add-slot, .dialog-close, .mode-tabs button, .file-button {
+.primary-button, .secondary-button, .quiet-button, .add-slot, .dialog-close, .mode-tabs button, .file-button, .theme-toggle {
   align-items: center; border: var(--rule-hair) solid transparent; display: inline-flex; justify-content: center;
   min-height: 2.75rem; transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), opacity var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out); white-space: nowrap;
 }
 .primary-button { background: var(--color-accent); border-radius: var(--radius-control); color: var(--color-accent-ink); font-weight: 650; padding: 0 var(--space-lg); }
 .secondary-button { background: transparent; border-color: var(--color-rule-2); border-radius: var(--radius-control); padding: 0 var(--space-lg); }
 .quiet-button { background: transparent; color: inherit; min-height: 2rem; padding: 0; text-decoration: underline; text-decoration-color: var(--color-rule-2); text-underline-offset: .3em; }
+.theme-toggle { background: transparent; border-color: var(--color-rule-2); border-radius: 50%; flex: 0 0 auto; font-size: var(--text-md); height: 2.75rem; padding: 0; width: 2.75rem; }
 .intro {
   align-items: end; display: grid; gap: var(--space-xl); grid-template-columns: minmax(0, 1.5fr) minmax(16rem, .5fr);
   margin: 0 auto; max-width: var(--page-max); min-height: min(34rem, 68svh); padding: var(--space-2xl) var(--page-gutter) var(--space-3xl);
@@ -95,12 +96,12 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .state-panel p { color: var(--color-muted); margin: var(--space-xs) 0 var(--space-md); }
 .state-panel code { font-family: var(--font-outlier); font-size: .9em; }
 
-.site-footer { align-items: end; background: var(--color-ink); color: var(--color-paper); display: flex; justify-content: space-between; min-height: 18rem; padding: var(--space-2xl) var(--page-gutter); }
+.site-footer { align-items: end; background: var(--color-footer-bg); color: var(--color-footer-ink); display: flex; justify-content: space-between; min-height: 18rem; padding: var(--space-2xl) var(--page-gutter); }
 .site-footer p { font-family: var(--font-display); font-size: clamp(1.75rem, 4vw, 3.4rem); letter-spacing: -.05em; line-height: 1; margin: 0; max-width: 16ch; }
-.site-footer a { color: var(--color-paper-3); font-size: var(--text-sm); }
+.site-footer a { color: var(--color-footer-ink); font-size: var(--text-sm); opacity: .75; }
 
 .input-dialog { background: var(--color-surface); border: 0; border-radius: var(--radius-dialog); box-shadow: 0 1.5rem 5rem var(--color-shadow); color: var(--color-ink); margin: auto; max-height: min(48rem, 90svh); max-width: 44rem; padding: 0; width: calc(100% - 2rem); }
-.input-dialog::backdrop { background: var(--color-ink); opacity: .56; }
+.input-dialog::backdrop { background: var(--color-overlay); opacity: .72; }
 .input-dialog[open] { animation: dialog-in var(--dur-short) var(--ease-out); }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(.75rem); } }
 .dialog-top { align-items: start; border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; justify-content: space-between; padding: var(--space-lg); }
@@ -151,15 +152,15 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 
 @media (hover: hover) and (pointer: fine) {
   .primary-button:hover { background: var(--color-accent-deep); }
-  .secondary-button:hover, .add-slot:hover, .dialog-close:hover { background: var(--color-paper-2); border-color: var(--color-ink-2); }
+  .secondary-button:hover, .add-slot:hover, .dialog-close:hover, .theme-toggle:hover { background: var(--color-paper-2); border-color: var(--color-ink-2); }
   .quiet-button:hover, .site-header nav > a:hover { color: var(--color-accent-deep); }
   .member-card:hover { border-color: var(--color-rule-2); box-shadow: 0 .5rem 1.5rem var(--color-shadow); transform: translateY(-1px); }
   .schedule-tabs button:hover { background: var(--color-paper-2); }
 }
-.primary-button:active, .secondary-button:active, .quiet-button:active, .add-slot:active, .dialog-close:active, .mode-tabs button:active, .file-button:active, .schedule-tabs button:active { transform: translateY(1px); }
+.primary-button:active, .secondary-button:active, .quiet-button:active, .add-slot:active, .dialog-close:active, .mode-tabs button:active, .file-button:active, .schedule-tabs button:active, .theme-toggle:active { transform: translateY(1px); }
 
 @media (max-width: 48rem) {
-  .site-header nav > a, .desktop-input { display: none; }
+  .site-header nav > a { display: none; }
   .intro { align-items: start; gap: var(--space-xl); grid-template-columns: 1fr; min-height: auto; padding-block: var(--space-xl) var(--space-2xl); }
   .intro h1 { font-size: clamp(2.2rem, 11vw, 3.1rem); }
   .intro-copy { max-width: 25rem; }
@@ -171,6 +172,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 
 @media (max-width: 26rem) {
   .site-header { min-height: 4rem; }
+  .site-header nav { gap: var(--space-xs); }
   .primary-button { padding-inline: var(--space-md); }
   .intro { padding-top: var(--space-xl); }
   .workspace-heading h2 { font-size: var(--text-xl); }
