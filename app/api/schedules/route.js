@@ -16,7 +16,7 @@ export async function POST(request) {
   }
 
   const { data: validSlots, error: slotError } = await supabase
-    .from("session_slots").select("id").in("id", slotIds).eq("is_active", true);
+    .from("session_slots").select("id").in("id", slotIds).eq("active", true);
   if (slotError || validSlots?.length !== slotIds.length) {
     return NextResponse.json({ error: "Ada jadwal yang sudah tidak aktif. Muat ulang lalu coba lagi." }, { status: 409 });
   }
@@ -28,4 +28,3 @@ export async function POST(request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, count: slotIds.length });
 }
-
