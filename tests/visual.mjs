@@ -23,6 +23,11 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 1) throw new Error(`${name}: overflow horizontal ${overflow}px`);
   await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/${name}.png`, fullPage: true });
+  if (name === "desktop-data") {
+    await page.getByRole("tab", { name: /Meet & Greet/ }).click();
+    const cards = page.locator("#session-cards");
+    if (!await cards.getByText("Freya", { exact: true }).isVisible() || await cards.getByText("Erii", { exact: true }).isVisible()) throw new Error("Tab Meet & Greet tidak memfilter jadwal.");
+  }
   if (name === "mobile-375-data") {
     await page.getByRole("button", { name: "Isi jadwal", exact: true }).click();
     await page.getByLabel("Nama kamu").fill("Sergio");

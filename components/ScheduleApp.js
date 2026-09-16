@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CSV_COLUMNS, parseScheduleCsv } from "../lib/csv";
 
 const ALL = "Semua";
+const TICKET_TABS = ["2-Shot", "Meet & Greet"];
+const sessionCollator = new Intl.Collator("id-ID", { numeric: true });
 
 function includes(value, query) {
   return String(value ?? "").toLocaleLowerCase("id-ID").includes(query.toLocaleLowerCase("id-ID"));
@@ -25,7 +27,7 @@ function downloadTemplate() {
 export default function ScheduleApp() {
   const dialogRef = useRef(null);
   const [data, setData] = useState({ loading: true, configured: true, event: null, slots: [] });
-  const [ticket, setTicket] = useState(ALL);
+  const [ticket, setTicket] = useState(TICKET_TABS[0]);
   const [session, setSession] = useState(ALL);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState([]);
@@ -45,16 +47,15 @@ export default function ScheduleApp() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const ticketTypes = useMemo(() => unique(data.slots.map((slot) => slot.ticket_type)), [data.slots]);
-  const sessions = useMemo(() => unique(data.slots.filter((slot) => ticket === ALL || slot.ticket_type === ticket).map((slot) => slot.session_label)), [data.slots, ticket]);
+  const sessions = useMemo(() => unique(data.slots.filter((slot) => slot.ticket_type === ticket).map((slot) => slot.session_label)).sort(sessionCollator.compare), [data.slots, ticket]);
   const visible = useMemo(() => data.slots.filter((slot) =>
-    (ticket === ALL || slot.ticket_type === ticket)
+    slot.ticket_type === ticket
     && (session === ALL || slot.session_label === session)
     && (!query || [slot.member_name, slot.group_name, slot.lane_label, ...(slot.schedules ?? []).map((item) => item.participant_name)].some((value) => includes(value, query)))
   ), [data.slots, query, session, ticket]);
-  const grouped = useMemo(() => Object.entries(Object.groupBy(visible, (slot) => slot.session_label)), [visible]);
+  const grouped = useMemo(() => Object.entries(Object.groupBy(visible, (slot) => slot.session_label)).sort(([a], [b]) => sessionCollator.compare(a, b)), [visible]);
   const people = useMemo(() => unique(visible.flatMap((slot) => (slot.schedules ?? []).map((item) => item.participant_name))), [visible]);
-  const activeFilter = [ticket !== ALL && ticket, session !== ALL && session, query && `“${query}”`].filter(Boolean).join(" · ") || "semua jadwal";
+  const activeFilter = [ticket, session !== ALL && session, query && `“${query}”`].filter(Boolean).join(" · ");
 
   function openInput(slotId) {
     setSelected(slotId ? [slotId] : []); setFeedback("");
@@ -107,8 +108,11 @@ export default function ScheduleApp() {
       <section className="workspace" id="jadwal" aria-labelledby="schedule-title">
         <div className="workspace-heading"><div><h2 id="schedule-title">{data.event?.name ?? "Jadwal event"}</h2><p>{data.event ? [data.event.event_date && new Date(`${data.event.event_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }), data.event.venue].filter(Boolean).join(" · ") : "2-Shot dan Meet & Greet"}</p></div><button className="primary-button desktop-input" onClick={() => openInput()}>+ Isi jadwal</button></div>
 
-        <div className="filters" aria-label="Filter jadwal">
-          <label><span>Tipe tiket</span><select value={ticket} onChange={(event) => { setTicket(event.target.value); setSession(ALL); }}><option>{ALL}</option>{ticketTypes.map((value) => <option key={value}>{value}</option>)}</select></label>
+        <div className="schedule-tabs" role="tablist" aria-label="Tipe tiket">
+          {TICKET_TABS.map((value) => <button key={value} role="tab" aria-selected={ticket === value} aria-controls="session-cards" onClick={() => { setTicket(value); setSession(ALL); }}>{value}<span>{unique(data.slots.filter((slot) => slot.ticket_type === value).map((slot) => slot.session_label)).length} sesi</span></button>)}
+        </div>
+
+        <div className="filters schedule-filters" aria-label="Filter jadwal">
           <label><span>Sesi</span><select value={session} onChange={(event) => setSession(event.target.value)}><option>{ALL}</option>{sessions.map((value) => <option key={value}>{value}</option>)}</select></label>
           <label className="search-field"><span>Cari member atau teman</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ketik nama…" /></label>
         </div>
@@ -124,7 +128,7 @@ export default function ScheduleApp() {
           : data.error ? <div className="state-panel error-text"><strong>Jadwal gagal dimuat.</strong><p>{data.error}</p><button className="secondary-button" onClick={load}>Coba lagi</button></div>
           : !data.event ? <div className="state-panel"><strong>Belum ada event aktif.</strong><p>Aktifkan satu event dari Supabase, lalu sinkronkan sumbernya.</p></div>
           : !grouped.length ? <div className="state-panel"><strong>Tidak ada jadwal yang cocok.</strong><p>Ubah filter atau kata pencarian.</p></div>
-          : <div className="session-list">{grouped.map(([sessionName, slots]) => <section className="session-block" key={sessionName}><div className="session-label"><h3>{sessionName}</h3><span>{slots.length} jadwal</span></div><div className="slot-list">{slots.map((slot) => <article className="slot-row" key={slot.id}><div className="slot-time"><span>{slot.ticket_type}</span><strong>{slot.lane_label || "Jalur menyusul"}</strong></div><div className="slot-member"><h4>{slot.member_name}</h4><span>{slot.group_name}</span></div><div className="slot-people">{slot.schedules?.length ? slot.schedules.map((item) => <span key={item.id}>{item.participant_name}</span>) : <small>Belum ada teman</small>}</div><button className="add-slot" aria-label={`Ikut jadwal ${slot.member_name}, ${sessionName}`} onClick={() => openInput(slot.id)}>+</button></article>)}</div></section>)}</div>}
+          : <div className="session-list" id="session-cards" role="tabpanel" aria-label={ticket}>{grouped.map(([sessionName, slots]) => <section className="session-card" key={sessionName}><header className="session-label"><div><h3>{sessionName}</h3><span>{ticket}</span></div><span>{slots.length} member</span></header><div className="slot-list">{slots.map((slot) => <article className="slot-row" key={slot.id}><div className="slot-member"><h4>{slot.member_name}</h4><span>{slot.group_name} · {slot.lane_label || "Jalur menyusul"}</span></div><div className="slot-people">{slot.schedules?.length ? slot.schedules.map((item) => <span key={item.id}>{item.participant_name}</span>) : <small>Belum ada teman</small>}</div><button className="add-slot" aria-label={`Ikut jadwal ${slot.member_name}, ${sessionName}`} onClick={() => openInput(slot.id)}>+</button></article>)}</div></section>)}</div>}
       </section>
     </main>
 
