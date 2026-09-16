@@ -112,7 +112,9 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .mode-tabs button[aria-selected="true"] { background: var(--color-accent-soft); border-bottom-color: var(--color-accent); color: var(--color-accent-deep); font-weight: 650; }
 .input-form { display: grid; gap: var(--space-lg); padding: var(--space-lg); }
 .input-form > label input, .admin-login input { background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-card); min-height: 3rem; outline: 2px solid transparent; outline-offset: 1px; padding: 0 var(--space-md); width: 100%; }
-.input-form > label input:focus-visible, .admin-login input:focus-visible { outline-color: var(--color-focus); outline-offset: 1px; }
+.input-form > label input:focus-visible, .admin-login input:focus-visible, .picker-search input:focus-visible { outline-color: var(--color-focus); outline-offset: 1px; }
+.manual-picker { display: grid; gap: var(--space-md); min-height: 0; }
+.picker-search input { background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-card); min-height: 3rem; outline: 2px solid transparent; outline-offset: 1px; padding: 0 var(--space-md); width: 100%; }
 .slot-picker { border: 0; margin: 0; max-height: 19rem; overflow-y: auto; padding: 0; }
 .slot-picker legend { font-weight: 650; margin-bottom: var(--space-sm); width: 100%; }
 .slot-picker legend span { color: var(--color-neutral); float: right; font-size: var(--text-sm); font-weight: 400; }
@@ -120,6 +122,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .slot-picker label > span { display: grid; }
 .slot-picker small { color: var(--color-neutral); }
 .slot-picker input { accent-color: var(--color-accent); height: 1.15rem; width: 1.15rem; }
+.slot-picker-empty { color: var(--color-neutral); margin: 0; padding: var(--space-lg) 0; text-align: center; }
 .csv-box { align-items: start; border-block: var(--rule-hair) solid var(--color-rule); display: grid; gap: var(--space-sm); padding: var(--space-lg) 0; }
 .file-button { background: var(--color-paper); border-color: var(--color-rule-2); border-radius: var(--radius-control); justify-self: start; padding: 0 var(--space-lg); }
 .file-button input { height: 1px; opacity: 0; position: absolute; width: 1px; }

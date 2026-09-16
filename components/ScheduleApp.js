@@ -6,7 +6,7 @@ import { memberPhotoUrl } from "../lib/member-photos";
 
 const ALL = "Semua";
 const TICKET_TABS = ["2-Shot", "Meet & Greet"];
-const sessionCollator = new Intl.Collator("id-ID", { numeric: true });
+const naturalCollator = new Intl.Collator("id-ID", { numeric: true });
 
 function includes(value, query) {
   return String(value ?? "").toLocaleLowerCase("id-ID").includes(query.toLocaleLowerCase("id-ID"));
@@ -41,6 +41,7 @@ export default function ScheduleApp() {
   const [session, setSession] = useState(ALL);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState([]);
+  const [pickerQuery, setPickerQuery] = useState("");
   const [mode, setMode] = useState("manual");
   const [name, setName] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -57,18 +58,19 @@ export default function ScheduleApp() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const sessions = useMemo(() => unique(data.slots.filter((slot) => slot.ticket_type === ticket).map((slot) => slot.session_label)).sort(sessionCollator.compare), [data.slots, ticket]);
+  const sessions = useMemo(() => unique(data.slots.filter((slot) => slot.ticket_type === ticket).map((slot) => slot.session_label)).sort(naturalCollator.compare), [data.slots, ticket]);
   const visible = useMemo(() => data.slots.filter((slot) =>
     slot.ticket_type === ticket
     && (session === ALL || slot.session_label === session)
     && (!query || [slot.member_name, slot.group_name, slot.lane_label, ...(slot.schedules ?? []).map((item) => item.participant_name)].some((value) => includes(value, query)))
-  ), [data.slots, query, session, ticket]);
-  const grouped = useMemo(() => Object.entries(Object.groupBy(visible, (slot) => slot.session_label)).sort(([a], [b]) => sessionCollator.compare(a, b)), [visible]);
+  ).sort((a, b) => naturalCollator.compare(a.lane_label ?? "", b.lane_label ?? "") || naturalCollator.compare(a.member_name, b.member_name)), [data.slots, query, session, ticket]);
+  const grouped = useMemo(() => Object.entries(Object.groupBy(visible, (slot) => slot.session_label)).sort(([a], [b]) => naturalCollator.compare(a, b)), [visible]);
   const people = useMemo(() => unique(visible.flatMap((slot) => (slot.schedules ?? []).map((item) => item.participant_name))), [visible]);
+  const pickerSlots = useMemo(() => data.slots.filter((slot) => !pickerQuery || includes(slot.member_name, pickerQuery)), [data.slots, pickerQuery]);
   const activeFilter = [ticket, session !== ALL && session, query && `“${query}”`].filter(Boolean).join(" · ");
 
   function openInput(slotId) {
-    setSelected(slotId ? [slotId] : []); setFeedback("");
+    setSelected(slotId ? [slotId] : []); setPickerQuery(""); setFeedback("");
     dialogRef.current?.showModal();
   }
 
@@ -150,7 +152,7 @@ export default function ScheduleApp() {
       <form className="input-form" onSubmit={save}>
         <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength="2" maxLength="80" autoComplete="name" placeholder="Nama yang dikenal komunitas" required /></label>
         {mode === "csv" ? <div className="csv-box"><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih file CSV</label><button type="button" className="quiet-button" onClick={downloadTemplate}>Unduh template</button><small>Kolom: {CSV_COLUMNS.join(", ")}. Jalur diverifikasi dari data terbaru.</small></div>
-          : <fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih</span></legend>{data.slots.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.ticket_type} · {slot.group_name}</small></span></label>)}</fieldset>}
+          : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Ketik nama member…" /></label><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerSlots.length} hasil</span></legend>{pickerSlots.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.ticket_type} · {slot.group_name}</small></span></label>)}{!pickerSlots.length && <p className="slot-picker-empty">Member tidak ditemukan.</p>}</fieldset></div>}
         <p className="form-feedback" role="status">{feedback}</p>
         <button className="primary-button submit-button" disabled={saving || selected.length === 0 || name.trim().length < 2}>{saving ? "Menyimpan…" : `Simpan ${selected.length || ""} jadwal`}</button>
       </form>
