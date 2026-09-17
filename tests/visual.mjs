@@ -72,7 +72,7 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
     await page.getByLabel("Cari member", { exact: true }).fill("Fiony");
     if (!await picker.getByText("Fiony", { exact: true }).isVisible() || await picker.getByText("Erii", { exact: true }).isVisible()) throw new Error("Pencarian member di dialog tidak memfilter jadwal.");
     await page.getByRole("tab", { name: "Impor CSV" }).click();
-    if (!await page.getByText("Ganti atau hapus baris contoh", { exact: false }).isVisible()) throw new Error("Petunjuk CSV tidak terlihat.");
+    if (!await page.getByText("Ekspor CSV dari ekstensi JKT48 Schedule Recap", { exact: false }).isVisible()) throw new Error("Petunjuk CSV ekstensi tidak terlihat.");
     await page.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/mobile-dialog.png" });
     await page.mouse.click(2, 400);
     if (await page.locator(".input-dialog").isVisible()) throw new Error("Klik backdrop tidak menutup dialog.");

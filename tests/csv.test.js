@@ -25,6 +25,26 @@ test("CSV menerima nickname member", () => {
   assert.deepEqual(result, { slotIds: ["slot-1", "slot-2"], unmatched: [] });
 });
 
+test("CSV JKT48 Schedule Recap hanya mengambil tanggal event", () => {
+  const slots = [
+    { id: "slot-1", member_name: "Angelina Christy", session_label: "Sesi 4", ticket_type: "2-Shot" },
+    { id: "slot-2", member_name: "Fritzy Rosmerian", session_label: "Sesi 7", ticket_type: "2-Shot" },
+  ];
+  const csv = [
+    '"Date","Session","Type","Member or Event"',
+    '"2025-10-24","Sesi 4","2Shot","Angelina Christy"',
+    '"2026-10-24","Sesi 4","2Shot","Angelina Christy"',
+    '"2026-10-24","Sesi 7","2Shot","Fritzy Rosmerian"',
+    '"2026-10-24","Session 1","Theater Show","JKT48 Theater"',
+  ].join("\n");
+  assert.deepEqual(parseScheduleCsv(csv, slots, "2026-10-24"), { slotIds: ["slot-1", "slot-2"], unmatched: [] });
+});
+
+test("CSV rekap memberi pesan jika tanggal event tidak ditemukan", () => {
+  const csv = 'Date,Session,Type,Member or Event\n2025-10-24,Sesi 4,2Shot,Angelina Christy';
+  assert.throws(() => parseScheduleCsv(csv, [], "2026-10-24"), /Tidak ada tiket.*2026-10-24/);
+});
+
 test("CSV melaporkan baris yang tidak ditemukan", () => {
   const result = parseScheduleCsv("Member,Sesi,Tipe Tiket\nTidak Ada,Sesi 1,2-Shot", []);
   assert.deepEqual(result.slotIds, []);
