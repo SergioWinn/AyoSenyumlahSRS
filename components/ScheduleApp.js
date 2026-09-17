@@ -41,6 +41,7 @@ export default function ScheduleApp() {
   const [ticket, setTicket] = useState(TICKET_TABS[0]);
   const [session, setSession] = useState(ALL);
   const [query, setQuery] = useState("");
+  const [withFriendsOnly, setWithFriendsOnly] = useState(false);
   const [selected, setSelected] = useState([]);
   const [pickerQuery, setPickerQuery] = useState("");
   const [mode, setMode] = useState("manual");
@@ -65,12 +66,13 @@ export default function ScheduleApp() {
   const visible = useMemo(() => data.slots.filter((slot) =>
     slot.ticket_type === ticket
     && (session === ALL || slot.session_label === session)
+    && (!withFriendsOnly || slot.schedules?.length)
     && (!query || [slot.member_name, slot.group_name, slot.lane_label, ...(slot.schedules ?? []).map((item) => item.participant_name)].some((value) => includes(value, query)))
-  ).sort((a, b) => naturalCollator.compare(a.lane_label ?? "", b.lane_label ?? "") || naturalCollator.compare(a.member_name, b.member_name)), [data.slots, query, session, ticket]);
+  ).sort((a, b) => naturalCollator.compare(a.lane_label ?? "", b.lane_label ?? "") || naturalCollator.compare(a.member_name, b.member_name)), [data.slots, query, session, ticket, withFriendsOnly]);
   const grouped = useMemo(() => Object.entries(Object.groupBy(visible, (slot) => slot.session_label)).sort(([a], [b]) => naturalCollator.compare(a, b)), [visible]);
   const people = useMemo(() => unique(visible.flatMap((slot) => (slot.schedules ?? []).map((item) => item.participant_name))), [visible]);
   const pickerSlots = useMemo(() => data.slots.filter((slot) => !pickerQuery || includes(slot.member_name, pickerQuery)), [data.slots, pickerQuery]);
-  const activeFilter = [ticket, session !== ALL && session, query && `“${query}”`].filter(Boolean).join(" · ");
+  const activeFilter = [ticket, session !== ALL && session, withFriendsOnly && "ada teman", query && `“${query}”`].filter(Boolean).join(" · ");
 
   function openInput(slotId) {
     setSelected(slotId ? [slotId] : []); setPickerQuery(""); setFeedback("");
@@ -132,6 +134,7 @@ export default function ScheduleApp() {
         <div className="filters schedule-filters" aria-label="Filter jadwal">
           <label><span>Sesi</span><select value={session} onChange={(event) => setSession(event.target.value)}><option>{ALL}</option>{sessions.map((value) => <option key={value}>{value}</option>)}</select></label>
           <label className="search-field"><span>Cari member atau teman</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ketik nama…" /></label>
+          <label className="presence-filter"><input type="checkbox" checked={withFriendsOnly} onChange={(event) => setWithFriendsOnly(event.target.checked)} /><span>Hanya yang ada teman</span></label>
         </div>
 
         <aside className="meeting-ribbon" aria-live="polite">
@@ -148,6 +151,8 @@ export default function ScheduleApp() {
           : <div className="session-list" id="session-cards" role="tabpanel" aria-label={ticket}>{grouped.map(([sessionName, slots]) => <section className="session-group" key={sessionName}><header className="session-label"><div><h3>{sessionName}</h3><span>{ticket}</span></div><span>{slots.length} member</span></header><div className="member-grid">{slots.map((slot) => <article className="member-card" key={slot.id}><span className="lane-label">{slot.lane_label || "Jalur menyusul"}</span><MemberPhoto slot={slot} /><div className="slot-member"><h4>{slot.member_name}</h4><span>{slot.group_name}</span></div><div className="slot-people"><small>{slot.schedules?.length ? `${slot.schedules.length} teman di sesi ini` : "Belum ada teman"}</small>{slot.schedules?.map((item) => <span key={item.id}>{item.participant_name}</span>)}</div><button className="add-slot" aria-label={`Ikut jadwal ${slot.member_name}, ${sessionName}`} onClick={() => openInput(slot.id)}>+ Ikut sesi</button></article>)}</div></section>)}</div>}
       </section>
     </main>
+
+    <footer className="site-footer"><div className="footer-inner"><span>Developed by <a href="https://x.com/estrellawin19" target="_blank" rel="noopener noreferrer">@estrellawin19</a></span><a className="tako-link" href="https://tako.id/Sportagame19Win" target="_blank" rel="noopener noreferrer">Support project ↗</a></div></footer>
 
     <dialog className="input-dialog" ref={dialogRef} onClose={() => setFeedback("")}>
       <form method="dialog" className="dialog-top"><div><span>Isi jadwal</span><h2>Pilih sesi</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>

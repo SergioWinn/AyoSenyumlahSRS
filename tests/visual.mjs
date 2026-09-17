@@ -26,6 +26,7 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   if (await page.getByRole("button", { name: "Isi jadwal", exact: true }).count() !== 1) throw new Error(`${name}: tombol Isi jadwal terduplikasi.`);
   if (!await page.getByRole("img", { name: "Logo Sumber Rezeki" }).isVisible()) throw new Error(`${name}: logo komunitas tidak terlihat.`);
   if (await page.getByRole("link", { name: "Jadwal", exact: true }).count() || await page.getByRole("link", { name: "Admin", exact: true }).count()) throw new Error(`${name}: tautan Jadwal/Admin masih terlihat.`);
+  if (!await page.getByRole("link", { name: "@estrellawin19" }).isVisible() || !await page.getByRole("link", { name: "Support project ↗" }).isVisible()) throw new Error(`${name}: credit atau tautan Tako tidak terlihat.`);
   const firstSessionLanes = await page.locator(".session-group").first().locator(".lane-label").allTextContents();
   if (firstSessionLanes.join(",") !== "Jalur 2,Jalur 8") throw new Error(`${name}: urutan jalur tidak natural (${firstSessionLanes.join(", ")})`);
   if (name === "reduced-motion") {
@@ -37,6 +38,9 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   if (overflow > 1) throw new Error(`${name}: overflow horizontal ${overflow}px`);
   await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/${name}.png`, fullPage: true });
   if (name === "desktop-data") {
+    await page.getByLabel("Hanya yang ada teman").check();
+    const filteredCards = page.locator("#session-cards");
+    if (await filteredCards.getByText("Fiony", { exact: true }).isVisible() || !await filteredCards.getByText("Ekin", { exact: true }).isVisible()) throw new Error("Filter teman tidak menyembunyikan sesi kosong.");
     await page.getByRole("tab", { name: /Meet & Greet/ }).click();
     const cards = page.locator("#session-cards");
     if (!await cards.getByText("Freya", { exact: true }).isVisible() || await cards.getByText("Erii", { exact: true }).isVisible()) throw new Error("Tab Meet & Greet tidak memfilter jadwal.");
@@ -53,6 +57,28 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   await page.close();
 }
 
+const adminCalls = [];
+const adminPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+adminPage.on("console", (message) => { if (message.type() === "error") consoleErrors.push(`admin: ${message.text()}`); });
+await adminPage.route("**/api/admin/status", (route) => route.fulfill({ json: { authenticated: true, event: { id: "event-1", name: "Festival Oktober", event_date: "2026-10-24" }, sources: [], slots } }));
+await adminPage.route("**/api/admin/schedules", async (route) => {
+  adminCalls.push({ method: route.request().method(), body: route.request().postDataJSON() });
+  await route.fulfill({ json: { ok: true } });
+});
+await adminPage.goto("http://localhost:3000/admin", { waitUntil: "networkidle" });
+if (!await adminPage.getByRole("heading", { name: "Kelola data" }).isVisible()) throw new Error("Halaman CRUD admin tidak terlihat.");
+await adminPage.getByLabel("Nama peserta").fill("Dimas");
+await adminPage.locator(".admin-schedule-form select").selectOption("2");
+await adminPage.getByRole("button", { name: "Tambah jadwal" }).click();
+await adminPage.locator(".admin-schedule-row").first().getByRole("button", { name: "Edit" }).click();
+await adminPage.getByLabel("Nama peserta").fill("Sergio Baru");
+await adminPage.getByRole("button", { name: "Simpan perubahan" }).click();
+adminPage.once("dialog", (dialog) => dialog.accept());
+await adminPage.locator(".admin-schedule-row").first().getByRole("button", { name: "Hapus" }).click();
+if (adminCalls.map((call) => call.method).join(",") !== "POST,PATCH,DELETE") throw new Error(`CRUD admin tidak lengkap: ${adminCalls.map((call) => call.method).join(",")}`);
+await adminPage.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/admin-crud.png", fullPage: true });
+await adminPage.close();
+
 await browser.close();
 if (consoleErrors.length) throw new Error(consoleErrors.join("\n"));
-console.log("Visual check passed: 6 viewports, no horizontal overflow or console errors.");
+console.log("Visual check passed: 6 viewports and admin CRUD, no horizontal overflow or console errors.");
