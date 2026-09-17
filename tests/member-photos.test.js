@@ -11,8 +11,14 @@ test("nickname dikenali sebagai identitas member", () => {
   assert.equal(memberNameMatches("Yuki Hirata", "yukinee"), true);
 });
 
-test("foto member memakai alias JKT48 dan fallback untuk grup lain", () => {
+test("foto member memakai sumber resmi sesuai grup", () => {
   assert.match(memberPhotoUrl("Freya", "JKT48"), /freya_jayawardana\.jpg/);
   assert.match(memberPhotoUrl("Maxine Faye", "JKT48"), /maxine_faye_lee\.jpg/);
-  assert.equal(memberPhotoUrl("Erii", "AKB48"), null);
+  assert.match(memberPhotoUrl("Erii", "AKB48"), /83100927\.jpg/);
+  assert.match(memberPhotoUrl("Yuiyui", "AKB48"), /83100816\.jpg/);
+  assert.match(memberPhotoUrl("Suzuha", "AKB48"), /83100952\.jpg/);
+  assert.match(memberPhotoUrl("Mizumin", "AKB48"), /83101007\.jpg/);
+  assert.match(memberPhotoUrl("Kohi", "AKB48"), /83101014\.jpg/);
+  assert.equal(memberPhotoUrl("Tidak Ada", "AKB48"), null);
+  assert.equal(memberPhotoUrl("Erii", "OTHER"), null);
 });
