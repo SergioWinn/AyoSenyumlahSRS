@@ -27,10 +27,10 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
   min-height: 4.75rem;
   padding: var(--space-sm) var(--page-gutter);
 }
-.wordmark { font-family: var(--font-display); font-size: var(--text-md); font-weight: 680; letter-spacing: -.035em; text-decoration: none; }
-.wordmark span { color: var(--color-accent); }
+.wordmark { align-items: center; display: inline-flex; font-family: var(--font-display); font-size: var(--text-md); font-weight: 680; gap: var(--space-sm); letter-spacing: -.035em; text-decoration: none; }
+.wordmark img { height: 3.5rem; object-fit: contain; width: 3.5rem; }
+.brand-name { color: var(--color-ink); }
 .site-header nav { align-items: center; display: flex; gap: var(--space-lg); }
-.site-header nav > a { color: var(--color-muted); font-size: var(--text-sm); text-decoration: none; }
 
 .primary-button, .secondary-button, .quiet-button, .add-slot, .dialog-close, .mode-tabs button, .file-button, .theme-toggle {
   align-items: center; border: var(--rule-hair) solid transparent; display: inline-flex; justify-content: center;
@@ -96,7 +96,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .state-panel p { color: var(--color-muted); margin: var(--space-xs) 0 var(--space-md); }
 .state-panel code { font-family: var(--font-outlier); font-size: .9em; }
 
-.site-footer { align-items: end; background: var(--color-footer-bg); color: var(--color-footer-ink); display: flex; justify-content: space-between; min-height: 18rem; padding: var(--space-2xl) var(--page-gutter); }
+.site-footer { align-items: end; background: var(--color-footer-bg); color: var(--color-footer-ink); display: flex; min-height: 18rem; padding: var(--space-2xl) var(--page-gutter); }
 .site-footer p { font-family: var(--font-display); font-size: clamp(1.75rem, 4vw, 3.4rem); letter-spacing: -.05em; line-height: 1; margin: 0; max-width: 16ch; }
 .site-footer a { color: var(--color-footer-ink); font-size: var(--text-sm); opacity: .75; }
 
@@ -153,14 +153,13 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 @media (hover: hover) and (pointer: fine) {
   .primary-button:hover { background: var(--color-accent-deep); }
   .secondary-button:hover, .add-slot:hover, .dialog-close:hover, .theme-toggle:hover { background: var(--color-paper-2); border-color: var(--color-ink-2); }
-  .quiet-button:hover, .site-header nav > a:hover { color: var(--color-accent-deep); }
+  .quiet-button:hover { color: var(--color-accent-deep); }
   .member-card:hover { border-color: var(--color-rule-2); box-shadow: 0 .5rem 1.5rem var(--color-shadow); transform: translateY(-1px); }
   .schedule-tabs button:hover { background: var(--color-paper-2); }
 }
 .primary-button:active, .secondary-button:active, .quiet-button:active, .add-slot:active, .dialog-close:active, .mode-tabs button:active, .file-button:active, .schedule-tabs button:active, .theme-toggle:active { transform: translateY(1px); }
 
 @media (max-width: 48rem) {
-  .site-header nav > a { display: none; }
   .intro { align-items: start; gap: var(--space-xl); grid-template-columns: 1fr; min-height: auto; padding-block: var(--space-xl) var(--space-2xl); }
   .intro h1 { font-size: clamp(2.2rem, 11vw, 3.1rem); }
   .intro-copy { max-width: 25rem; }
@@ -173,6 +172,8 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 26rem) {
   .site-header { min-height: 4rem; }
   .site-header nav { gap: var(--space-xs); }
+  .wordmark img { height: 3rem; width: 3rem; }
+  .brand-name { display: none; }
   .primary-button { padding-inline: var(--space-md); }
   .intro { padding-top: var(--space-xl); }
   .workspace-heading h2 { font-size: var(--text-xl); }

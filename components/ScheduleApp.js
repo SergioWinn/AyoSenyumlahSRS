@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CSV_COLUMNS, parseScheduleCsv } from "../lib/csv";
 import { memberPhotoUrl } from "../lib/member-photos";
@@ -116,8 +117,8 @@ export default function ScheduleApp() {
 
   return <>
     <header className="site-header">
-      <a className="wordmark" href="#jadwal">Ayo Senyumlah<span aria-hidden="true">.</span></a>
-      <nav aria-label="Navigasi utama"><a href="#jadwal">Jadwal</a><button className="theme-toggle" type="button" aria-label={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} title={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} onClick={toggleTheme}><span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span></button><button className="primary-button" onClick={() => openInput()}>Isi jadwal</button></nav>
+      <a className="wordmark" href="#jadwal"><Image src="/srs-logo.webp" alt="Logo Sumber Rezeki" width={64} height={64} priority /><span className="brand-name">Ayo Senyumlah</span></a>
+      <nav aria-label="Aksi utama"><button className="theme-toggle" type="button" aria-label={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} title={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} onClick={toggleTheme}><span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span></button><button className="primary-button" onClick={() => openInput()}>Isi jadwal</button></nav>
     </header>
 
     <main>
@@ -153,7 +154,7 @@ export default function ScheduleApp() {
       </section>
     </main>
 
-    <footer className="site-footer"><p>Jadwal komunitas JKT48 &amp; AKB48.</p><a href="/admin">Admin</a></footer>
+    <footer className="site-footer"><p>Jadwal komunitas JKT48 &amp; AKB48.</p></footer>
 
     <dialog className="input-dialog" ref={dialogRef} onClose={() => setFeedback("")}>
       <form method="dialog" className="dialog-top"><div><span>Jadwal komunitas</span><h2>Ikut sesi mana?</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>

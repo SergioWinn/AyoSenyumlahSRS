@@ -3,7 +3,7 @@ import "../tokens.css";
 import "./globals.css";
 
 export const metadata = {
-  title: "Ayo Senyumlah · Jadwal Barengan",
+  title: "SRS · Jadwal Komunitas",
   description: "Lihat jadwal 2-Shot dan Meet & Greet komunitas dalam satu tempat.",
 };
 
