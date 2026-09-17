@@ -12,6 +12,7 @@ export default function AdminApp() {
   const [participantName, setParticipantName] = useState("");
   const [slotId, setSlotId] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const rows = useMemo(() => (status?.slots ?? []).flatMap((slot) => (slot.schedules ?? []).map((schedule) => ({ ...schedule, slot }))), [status]);
 
   function showError(error) {
@@ -86,15 +87,16 @@ export default function AdminApp() {
   }
 
   function editSchedule(row) {
+    setPendingDeleteId(null);
     setEditingId(row.id); setParticipantName(row.participant_name); setSlotId(row.slot.id);
     document.querySelector(".admin-schedule-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   async function deleteSchedule(id) {
-    if (!window.confirm("Hapus jadwal peserta ini?")) return;
     try {
       await requestJson("/api/admin/schedules", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) }, "Jadwal belum bisa dihapus. Coba lagi.");
       setMessage("Jadwal dihapus.");
+      setPendingDeleteId(null);
       if (editingId === id) resetScheduleForm();
       await load();
     } catch (error) { showError(error); }
@@ -115,7 +117,7 @@ export default function AdminApp() {
         <label><span>Sesi</span><select value={slotId} onChange={(event) => setSlotId(event.target.value)} required><option value="">Pilih sesi</option>{status.slots?.map((slot) => <option key={slot.id} value={slot.id}>{slot.member_name} · {slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.ticket_type} · {slot.group_name}</option>)}</select></label>
         <div className="admin-form-actions"><button className="primary-button" type="submit">{editingId ? "Simpan perubahan" : "Tambah jadwal"}</button>{editingId && <button className="quiet-button" type="button" onClick={resetScheduleForm}>Batal</button>}</div>
       </form>
-      <div className="admin-schedule-list">{rows.map((row) => <article className="admin-schedule-row" key={row.id}><div><strong>{row.participant_name}</strong><small>{row.slot.member_name} · {row.slot.session_label} · {row.slot.lane_label || "Jalur menyusul"} · {row.slot.ticket_type} · {row.slot.group_name}</small></div><div className="admin-schedule-actions"><button className="secondary-button" type="button" onClick={() => editSchedule(row)}>Edit</button><button className="danger-button" type="button" onClick={() => deleteSchedule(row.id)}>Hapus</button></div></article>)}{!rows.length && <p className="admin-empty">Belum ada jadwal peserta.</p>}</div>
+      <div className="admin-schedule-list">{rows.map((row) => <article className="admin-schedule-row" key={row.id}><div><strong>{row.participant_name}</strong><small>{row.slot.member_name} · {row.slot.session_label} · {row.slot.lane_label || "Jalur menyusul"} · {row.slot.ticket_type} · {row.slot.group_name}</small></div><div className="admin-schedule-actions"><button className="secondary-button" type="button" onClick={() => editSchedule(row)}>Edit</button>{pendingDeleteId === row.id ? <><button className="danger-button is-confirming" type="button" onClick={() => deleteSchedule(row.id)}>Yakin hapus?</button><button className="quiet-button" type="button" onClick={() => setPendingDeleteId(null)}>Batal</button></> : <button className="danger-button" type="button" onClick={() => setPendingDeleteId(row.id)}>Hapus</button>}</div></article>)}{!rows.length && <p className="admin-empty">Belum ada jadwal peserta.</p>}</div>
     </section>
 
     <section className="admin-section" aria-labelledby="source-title">

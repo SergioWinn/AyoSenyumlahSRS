@@ -37,6 +37,10 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   }
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 1) throw new Error(`${name}: overflow horizontal ${overflow}px`);
+  for (const label of await page.locator(".schedule-tabs .tab-name:visible").all()) {
+    const wrapped = await label.evaluate((element) => element.getClientRects().length > 1 || element.scrollWidth > element.clientWidth + 1);
+    if (wrapped) throw new Error(`${name}: label tab pecah menjadi dua baris.`);
+  }
   await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/${name}.png`, fullPage: true });
   if (name === "desktop-data") {
     const memberOptions = await page.getByLabel("Member", { exact: true }).locator("option").allTextContents();
@@ -103,8 +107,9 @@ await adminPage.getByRole("button", { name: "Tambah jadwal" }).click();
 await adminPage.locator(".admin-schedule-row").first().getByRole("button", { name: "Edit" }).click();
 await adminPage.getByLabel("Nama peserta").fill("Sergio Baru");
 await adminPage.getByRole("button", { name: "Simpan perubahan" }).click();
-adminPage.once("dialog", (dialog) => dialog.accept());
 await adminPage.locator(".admin-schedule-row").first().getByRole("button", { name: "Hapus" }).click();
+if (!await adminPage.getByRole("button", { name: "Yakin hapus?" }).isVisible()) throw new Error("Konfirmasi hapus inline tidak terlihat.");
+await adminPage.getByRole("button", { name: "Yakin hapus?" }).click();
 if (adminCalls.map((call) => call.method).join(",") !== "POST,PATCH,DELETE") throw new Error(`CRUD admin tidak lengkap: ${adminCalls.map((call) => call.method).join(",")}`);
 await adminPage.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/admin-crud.png", fullPage: true });
 await adminPage.close();
@@ -126,6 +131,7 @@ const loadFailurePage = await browser.newPage({ viewport: { width: 375, height: 
 await loadFailurePage.route("**/api/timetable", (route) => route.fulfill({ status: 500, contentType: "text/html", body: "<h1>database password leaked</h1>" }));
 await loadFailurePage.goto("http://localhost:3000", { waitUntil: "networkidle" });
 if (!await loadFailurePage.getByRole("button", { name: "Coba lagi" }).isVisible() || await loadFailurePage.getByText("database password leaked").count()) throw new Error("Error pemuatan jadwal tidak ditangani dengan aman.");
+if (!await loadFailurePage.locator(".refresh-status.is-error").isVisible()) throw new Error("Status online masih hijau setelah refresh gagal.");
 await loadFailurePage.close();
 
 const adminFailurePage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
