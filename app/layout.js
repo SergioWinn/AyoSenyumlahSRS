@@ -3,8 +3,8 @@ import "../tokens.css";
 import "./globals.css";
 
 export const metadata = {
-  title: "SRS · Jadwal Komunitas",
-  description: "Lihat jadwal 2-Shot dan Meet & Greet komunitas dalam satu tempat.",
+  title: "SRS · Jadwal 2-Shot & Meet and Greet",
+  description: "Lihat jadwal per sesi dan isi jadwalmu.",
 };
 
 const themeScript = `(function(){try{var saved=localStorage.getItem("theme");var theme=saved||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=theme;}catch(e){}})()`;

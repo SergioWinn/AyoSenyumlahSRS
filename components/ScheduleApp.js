@@ -122,13 +122,8 @@ export default function ScheduleApp() {
     </header>
 
     <main>
-      <section className="intro" aria-labelledby="page-title">
-        <div><p className="intro-kicker">2-Shot &amp; Meet and Greet</p><h1 id="page-title">Jadwal komunitas.</h1></div>
-        <p className="intro-copy">Lihat member, jalur, dan teman komunitas yang hadir di setiap sesi JKT48 dan AKB48.</p>
-      </section>
-
       <section className="workspace" id="jadwal" aria-labelledby="schedule-title">
-        <div className="workspace-heading"><div><h2 id="schedule-title">{data.event?.name ?? "Jadwal event"}</h2><p>{data.event ? [data.event.event_date && new Date(`${data.event.event_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }), data.event.venue].filter(Boolean).join(" · ") : "2-Shot dan Meet & Greet"}</p></div></div>
+        <div className="workspace-heading"><div><h1 id="schedule-title">{data.event?.name ?? "Jadwal event"}</h1><p>{data.event ? [data.event.event_date && new Date(`${data.event.event_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }), data.event.venue].filter(Boolean).join(" · ") : "2-Shot dan Meet & Greet"}</p></div></div>
 
         <div className="schedule-tabs" role="tablist" aria-label="Tipe tiket">
           {TICKET_TABS.map((value) => <button key={value} role="tab" aria-selected={ticket === value} aria-controls="session-cards" onClick={() => { setTicket(value); setSession(ALL); }}>{value}<span>{unique(data.slots.filter((slot) => slot.ticket_type === value).map((slot) => slot.session_label)).length} sesi</span></button>)}
@@ -154,13 +149,11 @@ export default function ScheduleApp() {
       </section>
     </main>
 
-    <footer className="site-footer"><p>Jadwal komunitas JKT48 &amp; AKB48.</p></footer>
-
     <dialog className="input-dialog" ref={dialogRef} onClose={() => setFeedback("")}>
-      <form method="dialog" className="dialog-top"><div><span>Jadwal komunitas</span><h2>Ikut sesi mana?</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>
+      <form method="dialog" className="dialog-top"><div><span>Isi jadwal</span><h2>Pilih sesi</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>
       <div className="mode-tabs" role="tablist" aria-label="Cara input"><button role="tab" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button role="tab" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
       <form className="input-form" onSubmit={save}>
-        <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength="2" maxLength="80" autoComplete="name" placeholder="Nama yang dikenal komunitas" required /></label>
+        <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength="2" maxLength="80" autoComplete="name" placeholder="Nama panggilan" required /></label>
         {mode === "csv" ? <div className="csv-box"><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih file CSV</label><button type="button" className="quiet-button" onClick={downloadTemplate}>Unduh template</button><small>Kolom: {CSV_COLUMNS.join(", ")}. Jalur diverifikasi dari data terbaru.</small></div>
           : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Ketik nama member…" /></label><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerSlots.length} hasil</span></legend>{pickerSlots.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.ticket_type} · {slot.group_name}</small></span></label>)}{!pickerSlots.length && <p className="slot-picker-empty">Member tidak ditemukan.</p>}</fieldset></div>}
         <p className="form-feedback" role="status">{feedback}</p>

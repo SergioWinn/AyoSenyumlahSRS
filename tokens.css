@@ -21,8 +21,6 @@
   --color-error-soft: oklch(94% 0.032 25);
   --color-shadow: oklch(24% 0.018 45 / 0.08);
   --color-overlay: oklch(14% 0.018 45);
-  --color-footer-bg: var(--color-ink);
-  --color-footer-ink: var(--color-paper);
 
   --font-display: "Bricolage Grotesque Variable", "Arial Narrow", sans-serif;
   --font-body: "Aptos", "Segoe UI", Arial, sans-serif;
@@ -94,6 +92,4 @@
   --color-error-soft: oklch(26% 0.055 25);
   --color-shadow: oklch(4% 0.01 45 / 0.35);
   --color-overlay: oklch(5% 0.01 45);
-  --color-footer-bg: oklch(12% 0.012 45);
-  --color-footer-ink: oklch(94% 0.01 72);
 }
