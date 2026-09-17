@@ -102,6 +102,11 @@ export default function ScheduleApp() {
     setSelected((current) => current.includes(slotId) ? current.filter((id) => id !== slotId) : [...current, slotId]);
   }
 
+  function closeOnBackdrop(event) {
+    const { left, right, top, bottom } = event.currentTarget.getBoundingClientRect();
+    if (event.clientX < left || event.clientX > right || event.clientY < top || event.clientY > bottom) event.currentTarget.close();
+  }
+
   async function importCsv(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -180,7 +185,7 @@ export default function ScheduleApp() {
 
     <footer className="site-footer"><div className="footer-inner"><span>Developed by <a href="https://x.com/estrellawin19" target="_blank" rel="noopener noreferrer">@estrellawin19</a></span><a className="tako-link" href="https://tako.id/Sportagame19Win" target="_blank" rel="noopener noreferrer">Support project ↗</a></div></footer>
 
-    <dialog className="input-dialog" ref={dialogRef} onClose={() => setFeedback("")}>
+    <dialog className="input-dialog" ref={dialogRef} onClick={closeOnBackdrop} onClose={() => setFeedback("")}>
       <form method="dialog" className="dialog-top"><div><span>Isi jadwal</span><h2>Pilih sesi</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>
       <div className="mode-tabs" role="tablist" aria-label="Cara input"><button role="tab" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button role="tab" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
       <form className="input-form" onSubmit={save}>

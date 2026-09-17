@@ -68,7 +68,8 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
     await page.getByRole("tab", { name: "Impor CSV" }).click();
     if (!await page.getByText("Ganti atau hapus baris contoh", { exact: false }).isVisible()) throw new Error("Petunjuk CSV tidak terlihat.");
     await page.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/mobile-dialog.png" });
-    await page.keyboard.press("Escape");
+    await page.mouse.click(2, 400);
+    if (await page.locator(".input-dialog").isVisible()) throw new Error("Klik backdrop tidak menutup dialog.");
   }
   await page.close();
 }
