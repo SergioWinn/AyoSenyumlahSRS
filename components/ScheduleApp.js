@@ -44,6 +44,7 @@ export default function ScheduleApp() {
   const [withFriendsOnly, setWithFriendsOnly] = useState(false);
   const [selected, setSelected] = useState([]);
   const [pickerQuery, setPickerQuery] = useState("");
+  const [pickerTicket, setPickerTicket] = useState(TICKET_TABS[0]);
   const [mode, setMode] = useState("manual");
   const [name, setName] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -72,10 +73,14 @@ export default function ScheduleApp() {
   const grouped = useMemo(() => Object.entries(Object.groupBy(visible, (slot) => slot.session_label)).sort(([a], [b]) => naturalCollator.compare(a, b)), [visible]);
   const people = useMemo(() => unique(visible.flatMap((slot) => (slot.schedules ?? []).map((item) => item.participant_name))), [visible]);
   const pickerSlots = useMemo(() => data.slots.filter((slot) => !pickerQuery || includes(slot.member_name, pickerQuery)), [data.slots, pickerQuery]);
+  const pickerGroups = useMemo(() => TICKET_TABS.map((type) => [type, pickerSlots.filter((slot) => slot.ticket_type === type)]), [pickerSlots]);
+  const pickerVisible = pickerGroups.find(([type]) => type === pickerTicket)?.[1] ?? [];
   const activeFilter = [ticket, session !== ALL && session, withFriendsOnly && "ada teman", query && `“${query}”`].filter(Boolean).join(" · ");
 
   function openInput(slotId) {
+    const slot = data.slots.find((item) => item.id === slotId);
     setSelected(slotId ? [slotId] : []); setPickerQuery(""); setFeedback("");
+    setPickerTicket(slot?.ticket_type ?? ticket);
     dialogRef.current?.showModal();
   }
 
@@ -160,7 +165,7 @@ export default function ScheduleApp() {
       <form className="input-form" onSubmit={save}>
         <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength="2" maxLength="80" autoComplete="name" placeholder="Nama panggilan" required /></label>
         {mode === "csv" ? <div className="csv-box"><div className="csv-guide"><strong>Cara mengisi CSV</strong><ol><li>Unduh template yang sudah berisi contoh dari event ini.</li><li>Ganti atau hapus baris contoh, lalu isi satu jadwal per baris. Jangan ubah judul kolom.</li><li>Pastikan nama member, sesi, jalur, dan tipe tiket sama seperti yang tampil di jadwal.</li></ol></div><div className="csv-actions"><button type="button" className="secondary-button" onClick={() => downloadTemplate(data.slots)}>Unduh template dengan contoh</button><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih CSV yang sudah diisi</label></div><small>Contoh di template diambil dari {Math.min(data.slots.length, 2)} jadwal pertama dan tidak otomatis dipilih sampai file diunggah.</small></div>
-          : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Ketik nama member…" /></label><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerSlots.length} hasil</span></legend>{pickerSlots.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.ticket_type} · {slot.group_name}</small></span></label>)}{!pickerSlots.length && <p className="slot-picker-empty">Member tidak ditemukan.</p>}</fieldset></div>}
+          : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Ketik nama member…" /></label><div className="picker-ticket-tabs" role="tablist" aria-label="Tipe tiket pilihan manual">{pickerGroups.map(([type, slots]) => <button type="button" role="tab" aria-selected={pickerTicket === type} key={type} onClick={() => setPickerTicket(type)}>{type}<span>{slots.length}</span></button>)}</div><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerVisible.length} hasil</span></legend>{pickerVisible.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.group_name}</small></span></label>)}{!pickerVisible.length && <p className="slot-picker-empty">Tidak ada member yang cocok.</p>}</fieldset></div>}
         <p className="form-feedback" role="status">{feedback}</p>
         <button className="primary-button submit-button" disabled={saving || selected.length === 0 || name.trim().length < 2}>{saving ? "Menyimpan…" : `Simpan ${selected.length || ""} jadwal`}</button>
       </form>

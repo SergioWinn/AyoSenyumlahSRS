@@ -49,8 +49,14 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   if (name === "mobile-375-data") {
     await page.getByRole("button", { name: "Isi jadwal", exact: true }).click();
     await page.getByLabel("Nama kamu").fill("Sergio");
-    await page.getByLabel("Cari member", { exact: true }).fill("Fiony");
     const picker = page.locator(".slot-picker");
+    const ticketTabs = page.getByRole("tablist", { name: "Tipe tiket pilihan manual" });
+    if (!await ticketTabs.getByRole("tab", { name: /2-Shot/ }).isVisible() || !await ticketTabs.getByRole("tab", { name: /Meet & Greet/ }).isVisible()) throw new Error("Pilihan manual belum dipisahkan berdasarkan tipe tiket.");
+    await ticketTabs.getByRole("tab", { name: /Meet & Greet/ }).click();
+    if (!await picker.getByText("Freya", { exact: true }).isVisible() || await picker.getByText("Erii", { exact: true }).isVisible()) throw new Error("Tab Meet & Greet pada pilihan manual tidak bekerja.");
+    await ticketTabs.getByRole("tab", { name: /2-Shot/ }).click();
+    await page.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/mobile-manual-dialog.png" });
+    await page.getByLabel("Cari member", { exact: true }).fill("Fiony");
     if (!await picker.getByText("Fiony", { exact: true }).isVisible() || await picker.getByText("Erii", { exact: true }).isVisible()) throw new Error("Pencarian member di dialog tidak memfilter jadwal.");
     await page.getByRole("tab", { name: "Impor CSV" }).click();
     if (!await page.getByText("Ganti atau hapus baris contoh", { exact: false }).isVisible()) throw new Error("Petunjuk CSV tidak terlihat.");
