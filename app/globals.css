@@ -69,6 +69,8 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .meeting-ribbon small { opacity: .78; }
 .people-line { display: flex; gap: var(--space-xs); min-width: 0; overflow: hidden; }
 .people-line span { border: var(--rule-hair) solid var(--color-accent); border-radius: var(--radius-control); flex: 0 0 auto; font-size: var(--text-sm); padding: var(--space-2xs) var(--space-sm); }
+.ribbon-action { display: grid; justify-items: end; }
+.ribbon-action small { color: var(--color-neutral); max-width: 16rem; text-align: right; }
 
 .session-list { display: grid; gap: var(--space-2xl); }
 .session-group { min-width: 0; }
@@ -114,6 +116,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .mode-tabs button[aria-selected="true"] { background: var(--color-accent-soft); border-bottom-color: var(--color-accent); color: var(--color-accent-deep); font-weight: 650; }
 .input-form { display: grid; gap: var(--space-lg); padding: var(--space-lg); }
 .input-form > label input, .admin-login input { background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-card); min-height: 3rem; outline: 2px solid transparent; outline-offset: 1px; padding: 0 var(--space-md); width: 100%; }
+.input-form > label small { color: var(--color-neutral); display: block; margin-top: var(--space-2xs); text-align: right; }
 .input-form > label input:focus-visible, .admin-login input:focus-visible, .picker-search input:focus-visible { outline-color: var(--color-focus); outline-offset: 1px; }
 .manual-picker { display: grid; gap: var(--space-md); min-height: 0; }
 .picker-search input { background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-card); min-height: 3rem; outline: 2px solid transparent; outline-offset: 1px; padding: 0 var(--space-md); width: 100%; }
@@ -208,6 +211,8 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
   .filters .presence-filter { grid-column: auto; }
   .meeting-ribbon { grid-template-columns: 1fr; }
   .meeting-ribbon .quiet-button { justify-self: start; }
+  .ribbon-action { justify-items: start; }
+  .ribbon-action small { text-align: left; }
   .people-line { grid-column: auto; grid-row: auto; }
   .member-card { min-height: 15.5rem; padding: var(--space-sm); }
   .member-photo { height: 4rem; width: 4rem; }

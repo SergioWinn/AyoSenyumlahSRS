@@ -48,7 +48,10 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   }
   if (name === "mobile-375-data") {
     await page.getByRole("button", { name: "Isi jadwal", exact: true }).click();
-    await page.getByLabel("Nama kamu").fill("Sergio");
+    const nameInput = page.getByLabel("Nama kamu");
+    await nameInput.pressSequentially("a".repeat(41));
+    if ((await nameInput.inputValue()).length !== 40) throw new Error("Batas 40 karakter nama tidak diterapkan.");
+    await nameInput.fill("Sergio");
     const picker = page.locator(".slot-picker");
     const ticketTabs = page.getByRole("tablist", { name: "Tipe tiket pilihan manual" });
     if (!await ticketTabs.getByRole("tab", { name: /2-Shot/ }).isVisible() || !await ticketTabs.getByRole("tab", { name: /Meet & Greet/ }).isVisible()) throw new Error("Pilihan manual belum dipisahkan berdasarkan tipe tiket.");
@@ -88,6 +91,31 @@ if (adminCalls.map((call) => call.method).join(",") !== "POST,PATCH,DELETE") thr
 await adminPage.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/admin-crud.png", fullPage: true });
 await adminPage.close();
 
+const saveFailurePage = await browser.newPage({ viewport: { width: 375, height: 900 } });
+await saveFailurePage.route("**/api/timetable", (route) => route.fulfill({ json: { configured: true, event: { name: "Festival Oktober" }, slots } }));
+await saveFailurePage.route("**/api/schedules", (route) => route.fulfill({ status: 500, contentType: "text/plain", body: 'duplicate key value violates constraint "secret"' }));
+await saveFailurePage.goto("http://localhost:3000", { waitUntil: "networkidle" });
+await saveFailurePage.getByRole("button", { name: "Isi jadwal", exact: true }).click();
+await saveFailurePage.getByLabel("Nama kamu").fill("Sergio");
+await saveFailurePage.locator(".slot-picker input[type=checkbox]").first().check();
+await saveFailurePage.getByRole("button", { name: /Simpan 1 jadwal/ }).click();
+await saveFailurePage.getByText("Jadwal belum tersimpan. Coba lagi.", { exact: true }).waitFor();
+const saveError = await saveFailurePage.locator(".form-feedback").textContent();
+if (!saveError.includes("Jadwal belum tersimpan") || saveError.includes("constraint")) throw new Error(`Error simpan tidak aman: ${saveError}`);
+await saveFailurePage.close();
+
+const loadFailurePage = await browser.newPage({ viewport: { width: 375, height: 900 } });
+await loadFailurePage.route("**/api/timetable", (route) => route.fulfill({ status: 500, contentType: "text/html", body: "<h1>database password leaked</h1>" }));
+await loadFailurePage.goto("http://localhost:3000", { waitUntil: "networkidle" });
+if (!await loadFailurePage.getByRole("button", { name: "Coba lagi" }).isVisible() || await loadFailurePage.getByText("database password leaked").count()) throw new Error("Error pemuatan jadwal tidak ditangani dengan aman.");
+await loadFailurePage.close();
+
+const adminFailurePage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+await adminFailurePage.route("**/api/admin/status", (route) => route.fulfill({ status: 500, contentType: "text/plain", body: "SQL connection string" }));
+await adminFailurePage.goto("http://localhost:3000/admin", { waitUntil: "networkidle" });
+if (!await adminFailurePage.getByText("Data admin gagal dimuat.", { exact: true }).isVisible() || await adminFailurePage.getByText("SQL connection string").count()) throw new Error("Error pemuatan admin tidak ditangani dengan aman.");
+await adminFailurePage.close();
+
 await browser.close();
 if (consoleErrors.length) throw new Error(consoleErrors.join("\n"));
-console.log("Visual check passed: 6 viewports and admin CRUD, no horizontal overflow or console errors.");
+console.log("Visual check passed: 6 viewports, admin CRUD, and safe error states.");

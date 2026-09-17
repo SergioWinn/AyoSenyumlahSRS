@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSecretClient } from "../../../lib/supabase";
+import { PARTICIPANT_NAME_MAX, PARTICIPANT_NAME_MIN, participantNameIsValid } from "../../../lib/schedule-limits";
+import { serverError } from "../../../lib/api-response";
 
 export async function POST(request) {
   const supabase = createSecretClient();
@@ -8,8 +10,8 @@ export async function POST(request) {
   const body = await request.json().catch(() => null);
   const participantName = typeof body?.participantName === "string" ? body.participantName.trim() : "";
   const slotIds = [...new Set(Array.isArray(body?.slotIds) ? body.slotIds.filter((id) => typeof id === "string") : [])];
-  if (participantName.length < 2 || participantName.length > 80) {
-    return NextResponse.json({ error: "Nama harus 2 sampai 80 karakter." }, { status: 400 });
+  if (!participantNameIsValid(participantName)) {
+    return NextResponse.json({ error: `Nama harus ${PARTICIPANT_NAME_MIN} sampai ${PARTICIPANT_NAME_MAX} karakter.` }, { status: 400 });
   }
   if (!slotIds.length || slotIds.length > 100) {
     return NextResponse.json({ error: "Pilih 1 sampai 100 jadwal." }, { status: 400 });
@@ -25,6 +27,7 @@ export async function POST(request) {
     slotIds.map((slotId) => ({ slot_id: slotId, participant_name: participantName })),
     { onConflict: "slot_id,participant_name_key", ignoreDuplicates: true },
   );
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error?.code === "23514") return NextResponse.json({ error: `Nama harus ${PARTICIPANT_NAME_MIN} sampai ${PARTICIPANT_NAME_MAX} karakter.` }, { status: 400 });
+  if (error) return serverError(error, "Jadwal belum tersimpan. Coba lagi sebentar.");
   return NextResponse.json({ ok: true, count: slotIds.length });
 }

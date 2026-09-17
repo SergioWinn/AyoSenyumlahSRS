@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdmin } from "../../../../lib/admin";
 import { buildJkt48Cookie, jkt48RequestHeaders } from "../../../../lib/jkt48";
 import { createSecretClient } from "../../../../lib/supabase";
-import { saveSourceSnapshot } from "../../../../lib/sync-source";
+import { saveSourceSnapshot, snapshotFailureMessage } from "../../../../lib/sync-source";
+import { serverError } from "../../../../lib/api-response";
 
 export async function POST(request) {
   if (!await getAdmin()) return NextResponse.json({ error: "Sesi admin tidak valid." }, { status: 401 });
@@ -17,7 +18,8 @@ export async function POST(request) {
   let query = supabase.from("event_sources").select("id,exclusive_code");
   if (body?.sourceId) query = query.eq("id", body.sourceId);
   const { data: sources, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError(error, "Daftar sumber belum bisa dimuat.");
+  if (!sources?.length) return NextResponse.json({ error: body?.sourceId ? "Sumber event tidak ditemukan." : "Belum ada sumber event untuk disinkronkan." }, { status: body?.sourceId ? 404 : 400 });
 
   const results = [];
   for (const source of sources ?? []) {
@@ -30,11 +32,13 @@ export async function POST(request) {
         headers: jkt48RequestHeaders(cookie),
       });
       if (!response.ok) throw new Error(`API JKT48 merespons ${response.status}${response.status === 403 ? ". Cookie Waiting Room mungkin dibutuhkan atau sudah kedaluwarsa" : ""}.`);
-      const payload = await response.json();
+      const payload = await response.json().catch(() => { throw new Error("API JKT48 mengirim respons yang tidak valid."); });
       const count = await saveSourceSnapshot(supabase, source.id, payload);
       results.push({ id: source.id, ok: true, count });
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : "Sinkronisasi gagal.";
+      const rawMessage = caught instanceof Error ? caught.message : "";
+      const message = rawMessage.startsWith("API JKT48 merespons") || rawMessage === "API JKT48 mengirim respons yang tidak valid."
+        ? rawMessage : snapshotFailureMessage(caught);
       await supabase.from("event_sources").update({
         sync_status: "error", sync_error: message, last_attempt_at: new Date().toISOString(),
       }).eq("id", source.id);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE } from "../../../../lib/admin";
 import { createPublicClient, createSecretClient } from "../../../../lib/supabase";
+import { serverError } from "../../../../lib/api-response";
 
 export async function POST(request) {
   const publicClient = createPublicClient();
@@ -9,7 +10,8 @@ export async function POST(request) {
   const body = await request.json().catch(() => null);
   const { data, error } = await publicClient.auth.signInWithPassword({ email: body?.email ?? "", password: body?.password ?? "" });
   if (error || !data.session) return NextResponse.json({ error: "Email atau password tidak cocok." }, { status: 401 });
-  const { data: admin } = await secretClient.from("admin_users").select("user_id").eq("user_id", data.user.id).maybeSingle();
+  const { data: admin, error: adminError } = await secretClient.from("admin_users").select("user_id").eq("user_id", data.user.id).maybeSingle();
+  if (adminError) return serverError(adminError, "Akses admin belum bisa diperiksa. Coba lagi.");
   if (!admin) return NextResponse.json({ error: "Akun ini bukan admin." }, { status: 403 });
 
   const response = NextResponse.json({ ok: true });
@@ -19,4 +21,3 @@ export async function POST(request) {
   });
   return response;
 }
-

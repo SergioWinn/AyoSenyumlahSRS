@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildScheduleCsvTemplate, parseScheduleCsv } from "../lib/csv";
 import { memberPhotoUrl } from "../lib/member-photos";
+import { PARTICIPANT_NAME_MAX, PARTICIPANT_NAME_MIN } from "../lib/schedule-limits";
+import { requestJson } from "../lib/client-api";
 
 const ALL = "Semua";
 const TICKET_TABS = ["2-Shot", "Meet & Greet"];
@@ -48,16 +50,16 @@ export default function ScheduleApp() {
   const [mode, setMode] = useState("manual");
   const [name, setName] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState("light");
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch("/api/timetable", { cache: "no-store" });
-      const payload = await response.json();
+      const payload = await requestJson("/api/timetable", { cache: "no-store" }, "Jadwal belum bisa dimuat. Coba lagi.");
       setData({ loading: false, configured: payload.configured !== false, event: payload.event, slots: payload.slots ?? [], error: payload.error });
-    } catch {
-      setData((current) => ({ ...current, loading: false, error: "Jadwal belum bisa dimuat." }));
+    } catch (error) {
+      setData((current) => ({ ...current, loading: false, error: error.message }));
     }
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -95,30 +97,37 @@ export default function ScheduleApp() {
       const result = parseScheduleCsv(await file.text(), data.slots);
       setSelected(result.slotIds);
       setFeedback(result.unmatched.length ? `${result.slotIds.length} jadwal cocok. Tidak ditemukan: ${result.unmatched.join(", ")}.` : `${result.slotIds.length} jadwal siap disimpan.`);
-    } catch (error) { setFeedback(error.message); }
+    } catch (error) { setFeedback(error instanceof Error ? error.message : "CSV belum bisa dibaca. Periksa file lalu coba lagi."); }
   }
 
   async function save(event) {
     event.preventDefault(); setSaving(true); setFeedback("Menyimpan…");
-    const response = await fetch("/api/schedules", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ participantName: name, slotIds: selected }) });
-    const result = await response.json();
-    setSaving(false);
-    if (!response.ok) return setFeedback(result.error);
-    await load();
-    setFeedback(`${result.count} jadwal tersimpan.`);
-    setTimeout(() => dialogRef.current?.close(), 650);
+    try {
+      const result = await requestJson("/api/schedules", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ participantName: name, slotIds: selected }) }, "Jadwal belum tersimpan. Coba lagi.");
+      await load();
+      setFeedback(`${result.count} jadwal tersimpan.`);
+      setTimeout(() => dialogRef.current?.close(), 650);
+    } catch (error) {
+      setFeedback(error.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function copyRibbon() {
     const summary = people.length ? `${activeFilter}: ${people.join(", ")}` : `${activeFilter}: belum ada yang mengisi.`;
-    await navigator.clipboard.writeText(summary);
-    setFeedback("Ringkasan disalin.");
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopyStatus("Ringkasan disalin.");
+    } catch {
+      setCopyStatus("Tidak dapat disalin. Periksa izin clipboard.");
+    }
   }
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
-    localStorage.setItem("theme", next);
+    try { localStorage.setItem("theme", next); } catch { /* Tema tetap berubah untuk sesi ini. */ }
     setTheme(next);
   }
 
@@ -145,7 +154,7 @@ export default function ScheduleApp() {
         <aside className="meeting-ribbon" aria-live="polite">
           <div><span className="ribbon-mark" aria-hidden="true" /><p><strong>{people.length ? `${people.length} teman terlihat` : "Belum ada teman terlihat"}</strong><small>untuk {activeFilter}</small></p></div>
           <div className="people-line">{people.length ? people.slice(0, 8).map((person) => <span key={person}>{person}</span>) : <span>Jadilah yang pertama mengisi.</span>}</div>
-          <button className="quiet-button" onClick={copyRibbon} disabled={!visible.length}>Salin ringkasan</button>
+          <div className="ribbon-action"><button className="quiet-button" onClick={copyRibbon} disabled={!visible.length}>Salin ringkasan</button><small role="status">{copyStatus}</small></div>
         </aside>
 
         {data.loading ? <div className="state-panel" role="status">Memuat jadwal…</div>
@@ -163,11 +172,11 @@ export default function ScheduleApp() {
       <form method="dialog" className="dialog-top"><div><span>Isi jadwal</span><h2>Pilih sesi</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>
       <div className="mode-tabs" role="tablist" aria-label="Cara input"><button role="tab" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button role="tab" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
       <form className="input-form" onSubmit={save}>
-        <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength="2" maxLength="80" autoComplete="name" placeholder="Nama panggilan" required /></label>
+        <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength={PARTICIPANT_NAME_MIN} maxLength={PARTICIPANT_NAME_MAX} autoComplete="name" placeholder="Nama panggilan" required /><small>{name.length}/{PARTICIPANT_NAME_MAX} karakter</small></label>
         {mode === "csv" ? <div className="csv-box"><div className="csv-guide"><strong>Cara mengisi CSV</strong><ol><li>Unduh template yang sudah berisi contoh dari event ini.</li><li>Ganti atau hapus baris contoh, lalu isi satu jadwal per baris. Jangan ubah judul kolom.</li><li>Pastikan nama member, sesi, jalur, dan tipe tiket sama seperti yang tampil di jadwal.</li></ol></div><div className="csv-actions"><button type="button" className="secondary-button" onClick={() => downloadTemplate(data.slots)}>Unduh template dengan contoh</button><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih CSV yang sudah diisi</label></div><small>Contoh di template diambil dari {Math.min(data.slots.length, 2)} jadwal pertama dan tidak otomatis dipilih sampai file diunggah.</small></div>
           : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Ketik nama member…" /></label><div className="picker-ticket-tabs" role="tablist" aria-label="Tipe tiket pilihan manual">{pickerGroups.map(([type, slots]) => <button type="button" role="tab" aria-selected={pickerTicket === type} key={type} onClick={() => setPickerTicket(type)}>{type}<span>{slots.length}</span></button>)}</div><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerVisible.length} hasil</span></legend>{pickerVisible.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.group_name}</small></span></label>)}{!pickerVisible.length && <p className="slot-picker-empty">Tidak ada member yang cocok.</p>}</fieldset></div>}
         <p className="form-feedback" role="status">{feedback}</p>
-        <button className="primary-button submit-button" disabled={saving || selected.length === 0 || name.trim().length < 2}>{saving ? "Menyimpan…" : `Simpan ${selected.length || ""} jadwal`}</button>
+        <button className="primary-button submit-button" disabled={saving || selected.length === 0 || name.trim().length < PARTICIPANT_NAME_MIN || name.trim().length > PARTICIPANT_NAME_MAX}>{saving ? "Menyimpan…" : `Simpan ${selected.length || ""} jadwal`}</button>
       </form>
     </dialog>
   </>;

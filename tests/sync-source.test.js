@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { saveSourceSnapshot } from "../lib/sync-source.js";
+import { safeSyncError, saveSourceSnapshot } from "../lib/sync-source.js";
+
+test("error sinkronisasi internal tidak diteruskan ke browser", () => {
+  assert.equal(safeSyncError('duplicate key value violates constraint "secret"'), "Sinkronisasi terakhir gagal. Coba sinkronkan ulang atau impor JSON secara manual.");
+  assert.equal(safeSyncError("API JKT48 merespons 403."), "API JKT48 merespons 403.");
+});
 
 test("snapshot diteruskan ke RPC sebelum status sukses", async () => {
   const calls = [];
@@ -15,4 +20,3 @@ test("snapshot diteruskan ke RPC sebelum status sukses", async () => {
   assert.equal(calls[0].args.p_slots.length, 1);
   assert.equal(calls[1].update.sync_status, "success");
 });
-

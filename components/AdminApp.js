@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PARTICIPANT_NAME_MAX, PARTICIPANT_NAME_MIN } from "../lib/schedule-limits";
+import { requestJson } from "../lib/client-api";
 
 export default function AdminApp() {
   const [status, setStatus] = useState(null);
+  const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
   const [waitingRoomCookie, setWaitingRoomCookie] = useState("");
   const [participantName, setParticipantName] = useState("");
@@ -11,46 +14,62 @@ export default function AdminApp() {
   const [editingId, setEditingId] = useState(null);
   const rows = useMemo(() => (status?.slots ?? []).flatMap((slot) => (slot.schedules ?? []).map((schedule) => ({ ...schedule, slot }))), [status]);
 
+  function showError(error) {
+    setMessage(error instanceof Error ? error.message : "Permintaan belum berhasil. Coba lagi.");
+    if (error?.status === 401) setStatus({ authenticated: false });
+  }
+
   async function load() {
-    const response = await fetch("/api/admin/status", { cache: "no-store" });
-    setStatus(await response.json());
+    try {
+      setLoadError("");
+      setStatus(await requestJson("/api/admin/status", { cache: "no-store" }, "Data admin belum bisa dimuat. Coba lagi."));
+    } catch (error) {
+      setLoadError(error.message);
+    }
   }
   useEffect(() => { load(); }, []);
 
   async function login(event) {
     event.preventDefault(); setMessage("Memeriksa akun…");
-    const response = await fetch("/api/admin/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) });
-    const data = await response.json();
-    if (!response.ok) return setMessage(data.error);
-    setMessage(""); load();
+    try {
+      await requestJson("/api/admin/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }, "Akun belum bisa diperiksa. Coba lagi.");
+      setMessage(""); await load();
+    } catch (error) { showError(error); }
   }
 
   async function sync(sourceId) {
     setMessage("Mengambil data terbaru…");
-    const response = await fetch("/api/admin/sync", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(sourceId ? { sourceId } : {}), ...(waitingRoomCookie ? { waitingRoomCookie } : {}) }) });
-    const data = await response.json();
-    const failures = data.results?.filter((item) => !item.ok) ?? [];
-    setMessage(!response.ok ? data.error : failures.length ? `Gagal: ${failures.map((item) => item.error).join("; ")}` : `Selesai. ${data.results.length} sumber diperbarui.`);
-    load();
+    try {
+      const data = await requestJson("/api/admin/sync", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(sourceId ? { sourceId } : {}), ...(waitingRoomCookie ? { waitingRoomCookie } : {}) }) }, "Sinkronisasi belum berhasil. Coba lagi.");
+      const failures = data.results?.filter((item) => !item.ok) ?? [];
+      setMessage(failures.length ? `Gagal: ${failures.map((item) => item.error).join("; ")}` : `Selesai. ${data.results.length} sumber diperbarui.`);
+      await load();
+    } catch (error) { showError(error); }
   }
 
   async function importPayload(sourceId, payload) {
     setMessage("Memeriksa dan menyimpan snapshot…");
-    const response = await fetch("/api/admin/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sourceId, payload }) });
-    const data = await response.json();
-    setMessage(response.ok ? `Snapshot tersimpan. ${data.count} sesi member diperbarui.` : data.error);
-    load();
+    try {
+      const data = await requestJson("/api/admin/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sourceId, payload }) }, "Snapshot belum bisa disimpan. Coba lagi.");
+      setMessage(`Snapshot tersimpan. ${data.count} sesi member diperbarui.`);
+      await load();
+    } catch (error) { showError(error); }
   }
 
   async function importJson(sourceId, file) {
     if (!file) return;
-    try { await importPayload(sourceId, JSON.parse(await file.text())); }
-    catch { setMessage("File bukan JSON yang valid."); }
+    let payload;
+    try { payload = JSON.parse(await file.text()); }
+    catch { return setMessage("File bukan JSON yang valid. Pilih file hasil salinan API."); }
+    await importPayload(sourceId, payload);
   }
 
   async function pasteJson(sourceId) {
-    try { await importPayload(sourceId, JSON.parse(await navigator.clipboard.readText())); }
-    catch { setMessage("Clipboard tidak berisi JSON valid atau izin clipboard ditolak."); }
+    let text;
+    try { text = await navigator.clipboard.readText(); }
+    catch { return setMessage("Clipboard tidak dapat dibaca. Izinkan akses clipboard lalu coba lagi."); }
+    try { await importPayload(sourceId, JSON.parse(text)); }
+    catch { setMessage("Teks clipboard bukan JSON yang valid."); }
   }
 
   function resetScheduleForm() {
@@ -59,11 +78,11 @@ export default function AdminApp() {
 
   async function saveSchedule(event) {
     event.preventDefault();
-    const response = await fetch("/api/admin/schedules", { method: editingId ? "PATCH" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(editingId ? { id: editingId } : {}), participantName, slotId }) });
-    const data = await response.json();
-    if (!response.ok) return setMessage(data.error);
-    setMessage(editingId ? "Jadwal diperbarui." : "Jadwal ditambahkan.");
-    resetScheduleForm(); await load();
+    try {
+      await requestJson("/api/admin/schedules", { method: editingId ? "PATCH" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(editingId ? { id: editingId } : {}), participantName, slotId }) }, "Jadwal belum bisa disimpan. Coba lagi.");
+      setMessage(editingId ? "Jadwal diperbarui." : "Jadwal ditambahkan.");
+      resetScheduleForm(); await load();
+    } catch (error) { showError(error); }
   }
 
   function editSchedule(row) {
@@ -73,23 +92,26 @@ export default function AdminApp() {
 
   async function deleteSchedule(id) {
     if (!window.confirm("Hapus jadwal peserta ini?")) return;
-    const response = await fetch("/api/admin/schedules", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
-    const data = await response.json();
-    setMessage(response.ok ? "Jadwal dihapus." : data.error);
-    if (response.ok) { if (editingId === id) resetScheduleForm(); await load(); }
+    try {
+      await requestJson("/api/admin/schedules", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) }, "Jadwal belum bisa dihapus. Coba lagi.");
+      setMessage("Jadwal dihapus.");
+      if (editingId === id) resetScheduleForm();
+      await load();
+    } catch (error) { showError(error); }
   }
 
-  if (!status) return <main className="admin-shell"><p>Memuat…</p></main>;
+  if (!status) return <main className="admin-shell">{loadError ? <div className="state-panel error-text"><strong>Data admin gagal dimuat.</strong><p>{loadError}</p><button className="secondary-button" onClick={load}>Coba lagi</button></div> : <p>Memuat…</p>}</main>;
   if (!status.authenticated) return <main className="admin-shell"><a className="wordmark" href="/">Ayo Senyumlah</a><form className="admin-login" onSubmit={login}><h1>Masuk admin</h1><label>Email<input name="email" type="email" autoComplete="email" required /></label><label>Password<input name="password" type="password" autoComplete="current-password" required /></label><button className="primary-button" type="submit">Masuk</button>{message && <p role="status">{message}</p>}</form></main>;
 
   return <main className="admin-shell">
     <header className="admin-header"><div><a className="wordmark" href="/">Ayo Senyumlah</a><h1>Kelola data</h1><p>Tambah, ubah, atau hapus jadwal peserta dan perbarui data sesi.</p></div></header>
+    {loadError && <p className="notice error-text" role="alert">{loadError}</p>}
     {message && <p className="notice" role="status">{message}</p>}
 
     <section className="admin-section" aria-labelledby="participant-title">
       <div className="admin-section-heading"><div><h2 id="participant-title">Jadwal peserta</h2><p>{status.event?.name ?? "Belum ada event aktif"} · {rows.length} entri</p></div></div>
       <form className="admin-schedule-form" onSubmit={saveSchedule}>
-        <label><span>Nama peserta</span><input value={participantName} onChange={(event) => setParticipantName(event.target.value)} minLength="2" maxLength="80" required /></label>
+        <label><span>Nama peserta</span><input value={participantName} onChange={(event) => setParticipantName(event.target.value)} minLength={PARTICIPANT_NAME_MIN} maxLength={PARTICIPANT_NAME_MAX} required /></label>
         <label><span>Sesi</span><select value={slotId} onChange={(event) => setSlotId(event.target.value)} required><option value="">Pilih sesi</option>{status.slots?.map((slot) => <option key={slot.id} value={slot.id}>{slot.member_name} · {slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.ticket_type} · {slot.group_name}</option>)}</select></label>
         <div className="admin-form-actions"><button className="primary-button" type="submit">{editingId ? "Simpan perubahan" : "Tambah jadwal"}</button>{editingId && <button className="quiet-button" type="button" onClick={resetScheduleForm}>Batal</button>}</div>
       </form>
