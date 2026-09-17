@@ -19,7 +19,6 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   { name: "reduced-motion", width: 375, height: 900, reducedMotion: "reduce" },
 ]) {
   const page = await browser.newPage({ viewport: { width, height }, reducedMotion });
-  await page.addInitScript(() => Object.defineProperty(navigator, "clipboard", { value: { writeText: async (text) => { window.__copiedText = text; } } }));
   page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(`${name}: ${message.text()}`); });
   await page.route("**/api/timetable", (route) => route.fulfill({ json: { configured: true, event: { name: "Festival Oktober", event_date: "2026-10-24", venue: "Jakarta" }, slots } }));
   await page.route("https://wsrv.nl/**", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" fill="#ead9d2"/><circle cx="90" cy="70" r="42" fill="#d6a68f"/><path d="M35 180c5-48 105-48 110 0" fill="#a52a22"/><path d="M48 62c8-51 79-55 88 2-28-5-54-22-88-2" fill="#251a17"/></svg>' }));
@@ -40,9 +39,16 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   if (overflow > 1) throw new Error(`${name}: overflow horizontal ${overflow}px`);
   await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/${name}.png`, fullPage: true });
   if (name === "desktop-data") {
-    await page.getByRole("button", { name: "Salin ringkasan" }).click();
-    const copied = await page.evaluate(() => window.__copiedText);
-    if (!copied.includes("Sesi 1\n- Gracie · Jalur 2: Raka") || copied.includes("Fiony")) throw new Error(`Ringkasan salin tidak memuat hanya jadwal yang sudah diisi:\n${copied}`);
+    const memberOptions = await page.getByLabel("Member", { exact: true }).locator("option").allTextContents();
+    const friendOptions = await page.getByLabel("Teman", { exact: true }).locator("option").allTextContents();
+    if (memberOptions.join(",") !== "Semua member,Erii,Fiony,Gracie,Jacqueline Immanuela") throw new Error(`Dropdown member tidak urut: ${memberOptions.join(", ")}`);
+    if (friendOptions.join(",") !== "Semua teman,Nadia,Raka,Sergio") throw new Error(`Dropdown teman tidak urut: ${friendOptions.join(", ")}`);
+    if (await page.getByRole("button", { name: "Salin ringkasan" }).count()) throw new Error("Fitur salin ringkasan masih terlihat.");
+    if ((await page.locator(".visible-count").textContent()) !== "3 teman terlihat") throw new Error("Jumlah teman tidak tampil di samping filter.");
+    await page.getByLabel("Teman", { exact: true }).selectOption("Raka");
+    if (!await page.locator("#session-cards").getByText("Gracie", { exact: true }).isVisible() || await page.locator("#session-cards").getByText("Erii", { exact: true }).isVisible()) throw new Error("Dropdown teman tidak memfilter jadwal.");
+    if ((await page.locator(".visible-count").textContent()) !== "1 teman terlihat") throw new Error("Jumlah teman tidak mengikuti filter.");
+    await page.getByLabel("Teman", { exact: true }).selectOption("Semua teman");
     const refreshed = page.waitForResponse((response) => response.url().includes("/api/timetable"));
     await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
     await refreshed;
@@ -72,7 +78,8 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
     await page.getByLabel("Cari member", { exact: true }).fill("Fiony");
     if (!await picker.getByText("Fiony", { exact: true }).isVisible() || await picker.getByText("Erii", { exact: true }).isVisible()) throw new Error("Pencarian member di dialog tidak memfilter jadwal.");
     await page.getByRole("tab", { name: "Impor CSV" }).click();
-    if (!await page.getByText("Ekspor CSV dari ekstensi JKT48 Schedule Recap", { exact: false }).isVisible()) throw new Error("Petunjuk CSV ekstensi tidak terlihat.");
+    const extensionLink = page.getByRole("link", { name: "JKT48 Schedule Recap" });
+    if (!await extensionLink.isVisible() || !((await extensionLink.getAttribute("href")) ?? "").includes("amkifnihmncpgmnjaojdmcohmnpalbki")) throw new Error("Tautan ekstensi CSV tidak terlihat.");
     await page.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/mobile-dialog.png" });
     await page.mouse.click(2, 400);
     if (await page.locator(".input-dialog").isVisible()) throw new Error("Klik backdrop tidak menutup dialog.");
