@@ -132,10 +132,11 @@ export default function ScheduleApp() {
   }
 
   async function copyRibbon() {
+    const occupiedGroups = grouped.map(([sessionName, slots]) => [sessionName, slots.filter((slot) => slot.schedules?.length)]).filter(([, slots]) => slots.length);
     const summary = [
       `${data.event?.name ?? "Jadwal event"} — ${activeFilter}`,
-      ...grouped.flatMap(([sessionName, slots]) => ["", sessionName, ...slots.map((slot) =>
-        `- ${slot.member_name} · ${slot.lane_label || "Jalur menyusul"}: ${slot.schedules?.map((item) => item.participant_name).join(", ") || "belum ada teman"}`
+      ...occupiedGroups.flatMap(([sessionName, slots]) => ["", sessionName, ...slots.map((slot) =>
+        `- ${slot.member_name} · ${slot.lane_label || "Jalur menyusul"}: ${slot.schedules.map((item) => item.participant_name).join(", ")}`
       )]),
     ].join("\n");
     try {
@@ -176,7 +177,7 @@ export default function ScheduleApp() {
         <aside className="meeting-ribbon" aria-live="polite">
           <div><span className="ribbon-mark" aria-hidden="true" /><p><strong>{people.length ? `${people.length} teman terlihat` : "Belum ada teman terlihat"}</strong><small>untuk {activeFilter}</small></p></div>
           <div className="people-line">{people.length ? people.slice(0, 8).map((person) => <span key={person}>{person}</span>) : <span>Jadilah yang pertama mengisi.</span>}</div>
-          <div className="ribbon-action"><button className="quiet-button" onClick={copyRibbon} disabled={!visible.length}>Salin ringkasan</button><small role="status">{copyStatus}</small></div>
+          <div className="ribbon-action"><button className="quiet-button" onClick={copyRibbon} disabled={!people.length}>Salin ringkasan</button><small role="status">{copyStatus}</small></div>
         </aside>
 
         {data.loading ? <div className="state-panel" role="status">Memuat jadwal…</div>

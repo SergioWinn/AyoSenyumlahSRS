@@ -42,7 +42,7 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   if (name === "desktop-data") {
     await page.getByRole("button", { name: "Salin ringkasan" }).click();
     const copied = await page.evaluate(() => window.__copiedText);
-    if (!copied.includes("Sesi 1\n- Gracie · Jalur 2: Raka") || !copied.includes("Sesi 2\n- Fiony · Jalur 5: belum ada teman")) throw new Error(`Ringkasan salin tidak memuat detail jadwal:\n${copied}`);
+    if (!copied.includes("Sesi 1\n- Gracie · Jalur 2: Raka") || copied.includes("Fiony")) throw new Error(`Ringkasan salin tidak memuat hanya jadwal yang sudah diisi:\n${copied}`);
     const refreshed = page.waitForResponse((response) => response.url().includes("/api/timetable"));
     await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
     await refreshed;
