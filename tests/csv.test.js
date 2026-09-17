@@ -1,6 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseScheduleCsv } from "../lib/csv.js";
+import { buildScheduleCsvTemplate, parseScheduleCsv } from "../lib/csv.js";
+
+test("template CSV memakai contoh aktual yang tetap bisa diimpor", () => {
+  const slots = [{ id: "slot-1", member_name: "Member, Satu", session_label: "Sesi 1", lane_label: "Jalur 2", ticket_type: "Meet & Greet" }];
+  const template = buildScheduleCsvTemplate(slots);
+  assert.match(template, /"Member, Satu","Sesi 1","Jalur 2","Meet & Greet"/);
+  assert.deepEqual(parseScheduleCsv(template, slots), { slotIds: ["slot-1"], unmatched: [] });
+});
 
 test("CSV menangani kutip dan mencocokkan jadwal tanpa peka huruf", () => {
   const slots = [{ id: "slot-1", member_name: "Member, Satu", session_label: "Sesi 1", lane_label: "Jalur 2", ticket_type: "Meet & Greet" }];
@@ -13,4 +20,3 @@ test("CSV melaporkan baris yang tidak ditemukan", () => {
   assert.deepEqual(result.slotIds, []);
   assert.deepEqual(result.unmatched, ["Tidak Ada"]);
 });
-

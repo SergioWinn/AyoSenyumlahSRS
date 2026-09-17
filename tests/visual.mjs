@@ -32,6 +32,7 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   if (name === "reduced-motion") {
     await page.getByRole("button", { name: "Gunakan tema gelap" }).click();
     if (await page.locator("html").getAttribute("data-theme") !== "dark") throw new Error("Toggle tema tidak mengaktifkan mode gelap.");
+    if (await page.locator("html").evaluate((element) => getComputedStyle(element).colorScheme) !== "dark") throw new Error("Kontrol native tidak mengikuti mode gelap.");
     if (await page.evaluate(() => localStorage.getItem("theme")) !== "dark") throw new Error("Pilihan tema tidak tersimpan.");
   }
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -51,6 +52,8 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
     await page.getByLabel("Cari member", { exact: true }).fill("Fiony");
     const picker = page.locator(".slot-picker");
     if (!await picker.getByText("Fiony", { exact: true }).isVisible() || await picker.getByText("Erii", { exact: true }).isVisible()) throw new Error("Pencarian member di dialog tidak memfilter jadwal.");
+    await page.getByRole("tab", { name: "Impor CSV" }).click();
+    if (!await page.getByText("Ganti atau hapus baris contoh", { exact: false }).isVisible()) throw new Error("Petunjuk CSV tidak terlihat.");
     await page.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/mobile-dialog.png" });
     await page.keyboard.press("Escape");
   }

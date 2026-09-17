@@ -1,7 +1,8 @@
 /* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V5 */
 /* Hallmark · macrostructure: Workbench · genre: modern-minimal · tone: premium-minimal · theme: Coral · anchor: coral · nav: N9 · footer: Ft5 · contrast: pass (40–41) · slop: pass (42–45) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (49) · icons: pass (30) · mobile: pass (34, 49, 50–57) */
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; overflow-x: clip; }
+html { color-scheme: light; scroll-behavior: smooth; overflow-x: clip; }
+html[data-theme="dark"] { color-scheme: dark; }
 body {
   margin: 0;
   background: var(--color-paper);
@@ -13,6 +14,7 @@ body {
 }
 button, input, select { color: inherit; font: inherit; }
 button, select { cursor: pointer; }
+select option { background: var(--color-surface); color: var(--color-ink); }
 button:disabled { cursor: not-allowed; opacity: .48; }
 a { color: inherit; text-underline-offset: .22em; }
 h1, h2 { min-width: 0; overflow-wrap: anywhere; }
@@ -124,6 +126,11 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .slot-picker input { accent-color: var(--color-accent); height: 1.15rem; width: 1.15rem; }
 .slot-picker-empty { color: var(--color-neutral); margin: 0; padding: var(--space-lg) 0; text-align: center; }
 .csv-box { align-items: start; border-block: var(--rule-hair) solid var(--color-rule); display: grid; gap: var(--space-sm); padding: var(--space-lg) 0; }
+.csv-guide { max-width: 65ch; }
+.csv-guide strong { display: block; margin-bottom: var(--space-xs); }
+.csv-guide ol { margin: 0; padding-left: 1.25rem; }
+.csv-guide li + li { margin-top: var(--space-2xs); }
+.csv-actions { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-sm); }
 .file-button { background: var(--color-paper); border-color: var(--color-rule-2); border-radius: var(--radius-control); justify-self: start; padding: 0 var(--space-lg); }
 .file-button input { height: 1px; opacity: 0; position: absolute; width: 1px; }
 .csv-box small, .form-feedback { color: var(--color-neutral); margin: 0; min-height: 1lh; }

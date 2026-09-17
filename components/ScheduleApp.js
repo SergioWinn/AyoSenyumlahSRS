@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CSV_COLUMNS, parseScheduleCsv } from "../lib/csv";
+import { buildScheduleCsvTemplate, parseScheduleCsv } from "../lib/csv";
 import { memberPhotoUrl } from "../lib/member-photos";
 
 const ALL = "Semua";
@@ -26,8 +26,8 @@ function MemberPhoto({ slot }) {
   </div>;
 }
 
-function downloadTemplate() {
-  const content = `${CSV_COLUMNS.join(",")}\n"Nama member","Sesi 1","Jalur 1","Meet & Greet"\n`;
+function downloadTemplate(slots) {
+  const content = buildScheduleCsvTemplate(slots);
   const anchor = document.createElement("a");
   anchor.href = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
   anchor.download = "template-jadwal.csv";
@@ -159,7 +159,7 @@ export default function ScheduleApp() {
       <div className="mode-tabs" role="tablist" aria-label="Cara input"><button role="tab" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button role="tab" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
       <form className="input-form" onSubmit={save}>
         <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength="2" maxLength="80" autoComplete="name" placeholder="Nama panggilan" required /></label>
-        {mode === "csv" ? <div className="csv-box"><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih file CSV</label><button type="button" className="quiet-button" onClick={downloadTemplate}>Unduh template</button><small>Kolom: {CSV_COLUMNS.join(", ")}. Jalur diverifikasi dari data terbaru.</small></div>
+        {mode === "csv" ? <div className="csv-box"><div className="csv-guide"><strong>Cara mengisi CSV</strong><ol><li>Unduh template yang sudah berisi contoh dari event ini.</li><li>Ganti atau hapus baris contoh, lalu isi satu jadwal per baris. Jangan ubah judul kolom.</li><li>Pastikan nama member, sesi, jalur, dan tipe tiket sama seperti yang tampil di jadwal.</li></ol></div><div className="csv-actions"><button type="button" className="secondary-button" onClick={() => downloadTemplate(data.slots)}>Unduh template dengan contoh</button><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih CSV yang sudah diisi</label></div><small>Contoh di template diambil dari {Math.min(data.slots.length, 2)} jadwal pertama dan tidak otomatis dipilih sampai file diunggah.</small></div>
           : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Ketik nama member…" /></label><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerSlots.length} hasil</span></legend>{pickerSlots.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.ticket_type} · {slot.group_name}</small></span></label>)}{!pickerSlots.length && <p className="slot-picker-empty">Member tidak ditemukan.</p>}</fieldset></div>}
         <p className="form-feedback" role="status">{feedback}</p>
         <button className="primary-button submit-button" disabled={saving || selected.length === 0 || name.trim().length < 2}>{saving ? "Menyimpan…" : `Simpan ${selected.length || ""} jadwal`}</button>
