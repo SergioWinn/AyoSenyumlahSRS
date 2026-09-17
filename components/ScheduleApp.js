@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildScheduleCsvTemplate, parseScheduleCsv } from "../lib/csv";
-import { memberPhotoUrl } from "../lib/member-photos";
+import { memberNameMatches, memberPhotoUrl } from "../lib/member-photos";
 import { PARTICIPANT_NAME_MAX, PARTICIPANT_NAME_MIN } from "../lib/schedule-limits";
 import { requestJson } from "../lib/client-api";
 
@@ -82,11 +82,11 @@ export default function ScheduleApp() {
     slot.ticket_type === ticket
     && (session === ALL || slot.session_label === session)
     && (!withFriendsOnly || slot.schedules?.length)
-    && (!query || [slot.member_name, slot.group_name, slot.lane_label, ...(slot.schedules ?? []).map((item) => item.participant_name)].some((value) => includes(value, query)))
+    && (!query || memberNameMatches(slot.member_name, query) || [slot.group_name, slot.lane_label, ...(slot.schedules ?? []).map((item) => item.participant_name)].some((value) => includes(value, query)))
   ).sort((a, b) => naturalCollator.compare(a.lane_label ?? "", b.lane_label ?? "") || naturalCollator.compare(a.member_name, b.member_name)), [data.slots, query, session, ticket, withFriendsOnly]);
   const grouped = useMemo(() => Object.entries(Object.groupBy(visible, (slot) => slot.session_label)).sort(([a], [b]) => naturalCollator.compare(a, b)), [visible]);
   const people = useMemo(() => unique(visible.flatMap((slot) => (slot.schedules ?? []).map((item) => item.participant_name))), [visible]);
-  const pickerSlots = useMemo(() => data.slots.filter((slot) => !pickerQuery || includes(slot.member_name, pickerQuery)), [data.slots, pickerQuery]);
+  const pickerSlots = useMemo(() => data.slots.filter((slot) => memberNameMatches(slot.member_name, pickerQuery)), [data.slots, pickerQuery]);
   const pickerGroups = useMemo(() => TICKET_TABS.map((type) => [type, pickerSlots.filter((slot) => slot.ticket_type === type)]), [pickerSlots]);
   const pickerVisible = pickerGroups.find(([type]) => type === pickerTicket)?.[1] ?? [];
   const activeFilter = [ticket, session !== ALL && session, withFriendsOnly && "ada teman", query && `“${query}”`].filter(Boolean).join(" · ");
@@ -164,7 +164,7 @@ export default function ScheduleApp() {
 
         <div className="filters schedule-filters" aria-label="Filter jadwal">
           <label><span>Sesi</span><select value={session} onChange={(event) => setSession(event.target.value)}><option>{ALL}</option>{sessions.map((value) => <option key={value}>{value}</option>)}</select></label>
-          <label className="search-field"><span>Cari member atau teman</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ketik nama…" /></label>
+          <label className="search-field"><span>Cari member atau teman</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nama lengkap atau nickname…" /></label>
           <label className="presence-filter"><input type="checkbox" checked={withFriendsOnly} onChange={(event) => setWithFriendsOnly(event.target.checked)} /><span>Hanya yang ada teman</span></label>
         </div>
 
@@ -190,8 +190,8 @@ export default function ScheduleApp() {
       <div className="mode-tabs" role="tablist" aria-label="Cara input"><button role="tab" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button role="tab" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
       <form className="input-form" onSubmit={save}>
         <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength={PARTICIPANT_NAME_MIN} maxLength={PARTICIPANT_NAME_MAX} autoComplete="name" placeholder="Nama panggilan" required /><small>{name.length}/{PARTICIPANT_NAME_MAX} karakter</small></label>
-        {mode === "csv" ? <div className="csv-box"><div className="csv-guide"><strong>Cara mengisi CSV</strong><ol><li>Unduh template yang sudah berisi contoh dari event ini.</li><li>Ganti atau hapus baris contoh, lalu isi satu jadwal per baris. Jangan ubah judul kolom.</li><li>Cukup isi member, sesi, dan tipe tiket. Jalur akan mengikuti jadwal secara otomatis.</li></ol></div><div className="csv-actions"><button type="button" className="secondary-button" onClick={() => downloadTemplate(data.slots)}>Unduh template dengan contoh</button><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih CSV yang sudah diisi</label></div><small>Contoh di template diambil dari {Math.min(data.slots.length, 2)} jadwal pertama. CSV lama yang masih memiliki kolom Jalur tetap dapat digunakan.</small></div>
-          : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Ketik nama member…" /></label><div className="picker-ticket-tabs" role="tablist" aria-label="Tipe tiket pilihan manual">{pickerGroups.map(([type, slots]) => <button type="button" role="tab" aria-selected={pickerTicket === type} key={type} onClick={() => setPickerTicket(type)}>{type}<span>{slots.length}</span></button>)}</div><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerVisible.length} hasil</span></legend>{pickerVisible.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.group_name}</small></span></label>)}{!pickerVisible.length && <p className="slot-picker-empty">Tidak ada member yang cocok.</p>}</fieldset></div>}
+        {mode === "csv" ? <div className="csv-box"><div className="csv-guide"><strong>Cara mengisi CSV</strong><ol><li>Unduh template yang sudah berisi contoh dari event ini.</li><li>Ganti atau hapus baris contoh, lalu isi satu jadwal per baris. Jangan ubah judul kolom.</li><li>Nama lengkap atau nickname sama-sama bisa dipakai. Jalur akan mengikuti jadwal secara otomatis.</li></ol></div><div className="csv-actions"><button type="button" className="secondary-button" onClick={() => downloadTemplate(data.slots)}>Unduh template dengan contoh</button><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih CSV yang sudah diisi</label></div><small>Kolom wajib: Member, Sesi, Tipe Tiket. CSV lama yang masih memiliki kolom Jalur tetap dapat digunakan.</small></div>
+          : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Nama lengkap atau nickname…" /></label><div className="picker-ticket-tabs" role="tablist" aria-label="Tipe tiket pilihan manual">{pickerGroups.map(([type, slots]) => <button type="button" role="tab" aria-selected={pickerTicket === type} key={type} onClick={() => setPickerTicket(type)}>{type}<span>{slots.length}</span></button>)}</div><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerVisible.length} hasil</span></legend>{pickerVisible.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.group_name}</small></span></label>)}{!pickerVisible.length && <p className="slot-picker-empty">Tidak ada member yang cocok.</p>}</fieldset></div>}
         <p className="form-feedback" role="status">{feedback}</p>
         <button className="primary-button submit-button" disabled={saving || selected.length === 0 || name.trim().length < PARTICIPANT_NAME_MIN || name.trim().length > PARTICIPANT_NAME_MAX}>{saving ? "Menyimpan…" : `Simpan ${selected.length || ""} jadwal`}</button>
       </form>

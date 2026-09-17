@@ -16,6 +16,15 @@ test("CSV lama dengan kolom jalur tetap diterima", () => {
   assert.deepEqual(result, { slotIds: ["slot-1"], unmatched: [] });
 });
 
+test("CSV menerima nickname member", () => {
+  const slots = [
+    { id: "slot-1", member_name: "Jacqueline Immanuela", session_label: "Sesi 7", ticket_type: "2-Shot" },
+    { id: "slot-2", member_name: "Erii Chiba", session_label: "Sesi 1", ticket_type: "Meet & Greet" },
+  ];
+  const result = parseScheduleCsv("Member,Sesi,Tipe Tiket\nEkin,Sesi 7,2-Shot\nErii,Sesi 1,Meet & Greet", slots);
+  assert.deepEqual(result, { slotIds: ["slot-1", "slot-2"], unmatched: [] });
+});
+
 test("CSV melaporkan baris yang tidak ditemukan", () => {
   const result = parseScheduleCsv("Member,Sesi,Tipe Tiket\nTidak Ada,Sesi 1,2-Shot", []);
   assert.deepEqual(result.slotIds, []);

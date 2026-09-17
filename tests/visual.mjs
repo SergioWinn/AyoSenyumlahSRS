@@ -6,7 +6,7 @@ const slots = [
   { id: "2", session_label: "Sesi 1", lane_label: "Jalur 8", member_name: "Erii", group_name: "AKB48", ticket_type: "2-Shot", schedules: [{ id: "c", participant_name: "Nadia" }] },
   { id: "3", session_label: "Sesi 2", lane_label: "Jalur 5", member_name: "Fiony", group_name: "JKT48", ticket_type: "2-Shot", schedules: [] },
   { id: "4", session_label: "Sesi 1", lane_label: "Jalur 2", member_name: "Gracie", group_name: "JKT48", ticket_type: "2-Shot", schedules: [{ id: "d", participant_name: "Raka" }] },
-  { id: "5", session_label: "Sesi 2", lane_label: "Jalur 7", member_name: "Ekin", group_name: "JKT48", ticket_type: "2-Shot", schedules: [{ id: "e", participant_name: "Sergio" }] },
+  { id: "5", session_label: "Sesi 2", lane_label: "Jalur 7", member_name: "Jacqueline Immanuela", group_name: "JKT48", ticket_type: "2-Shot", schedules: [{ id: "e", participant_name: "Sergio" }] },
 ];
 const consoleErrors = [];
 
@@ -45,7 +45,7 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
     if (!await page.getByText(/Diperbarui \d{2}[.:]\d{2}[.:]\d{2}/).isVisible()) throw new Error("Status auto-refresh tidak terlihat.");
     await page.getByLabel("Hanya yang ada teman").check();
     const filteredCards = page.locator("#session-cards");
-    if (await filteredCards.getByText("Fiony", { exact: true }).isVisible() || !await filteredCards.getByText("Ekin", { exact: true }).isVisible()) throw new Error("Filter teman tidak menyembunyikan sesi kosong.");
+    if (await filteredCards.getByText("Fiony", { exact: true }).isVisible() || !await filteredCards.getByText("Jacqueline Immanuela", { exact: true }).isVisible()) throw new Error("Filter teman tidak menyembunyikan sesi kosong.");
     await page.getByRole("tab", { name: /Meet & Greet/ }).click();
     const cards = page.locator("#session-cards");
     if (!await cards.getByText("Freya", { exact: true }).isVisible() || await cards.getByText("Erii", { exact: true }).isVisible()) throw new Error("Tab Meet & Greet tidak memfilter jadwal.");
@@ -63,6 +63,8 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
     if (!await picker.getByText("Freya", { exact: true }).isVisible() || await picker.getByText("Erii", { exact: true }).isVisible()) throw new Error("Tab Meet & Greet pada pilihan manual tidak bekerja.");
     await ticketTabs.getByRole("tab", { name: /2-Shot/ }).click();
     await page.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/mobile-manual-dialog.png" });
+    await page.getByLabel("Cari member", { exact: true }).fill("Ekin");
+    if (!await picker.getByText("Jacqueline Immanuela", { exact: true }).isVisible()) throw new Error("Pencarian nickname tidak menemukan nama lengkap member.");
     await page.getByLabel("Cari member", { exact: true }).fill("Fiony");
     if (!await picker.getByText("Fiony", { exact: true }).isVisible() || await picker.getByText("Erii", { exact: true }).isVisible()) throw new Error("Pencarian member di dialog tidak memfilter jadwal.");
     await page.getByRole("tab", { name: "Impor CSV" }).click();
