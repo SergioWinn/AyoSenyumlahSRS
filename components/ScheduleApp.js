@@ -132,7 +132,12 @@ export default function ScheduleApp() {
   }
 
   async function copyRibbon() {
-    const summary = people.length ? `${activeFilter}: ${people.join(", ")}` : `${activeFilter}: belum ada yang mengisi.`;
+    const summary = [
+      `${data.event?.name ?? "Jadwal event"} — ${activeFilter}`,
+      ...grouped.flatMap(([sessionName, slots]) => ["", sessionName, ...slots.map((slot) =>
+        `- ${slot.member_name} · ${slot.lane_label || "Jalur menyusul"}: ${slot.schedules?.map((item) => item.participant_name).join(", ") || "belum ada teman"}`
+      )]),
+    ].join("\n");
     try {
       await navigator.clipboard.writeText(summary);
       setCopyStatus("Ringkasan disalin.");

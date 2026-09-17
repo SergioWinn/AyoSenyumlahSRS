@@ -19,6 +19,7 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   { name: "reduced-motion", width: 375, height: 900, reducedMotion: "reduce" },
 ]) {
   const page = await browser.newPage({ viewport: { width, height }, reducedMotion });
+  await page.addInitScript(() => Object.defineProperty(navigator, "clipboard", { value: { writeText: async (text) => { window.__copiedText = text; } } }));
   page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(`${name}: ${message.text()}`); });
   await page.route("**/api/timetable", (route) => route.fulfill({ json: { configured: true, event: { name: "Festival Oktober", event_date: "2026-10-24", venue: "Jakarta" }, slots } }));
   await page.route("https://wsrv.nl/**", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" fill="#ead9d2"/><circle cx="90" cy="70" r="42" fill="#d6a68f"/><path d="M35 180c5-48 105-48 110 0" fill="#a52a22"/><path d="M48 62c8-51 79-55 88 2-28-5-54-22-88-2" fill="#251a17"/></svg>' }));
@@ -39,6 +40,9 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   if (overflow > 1) throw new Error(`${name}: overflow horizontal ${overflow}px`);
   await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/${name}.png`, fullPage: true });
   if (name === "desktop-data") {
+    await page.getByRole("button", { name: "Salin ringkasan" }).click();
+    const copied = await page.evaluate(() => window.__copiedText);
+    if (!copied.includes("Sesi 1\n- Gracie · Jalur 2: Raka") || !copied.includes("Sesi 2\n- Fiony · Jalur 5: belum ada teman")) throw new Error(`Ringkasan salin tidak memuat detail jadwal:\n${copied}`);
     const refreshed = page.waitForResponse((response) => response.url().includes("/api/timetable"));
     await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
     await refreshed;
