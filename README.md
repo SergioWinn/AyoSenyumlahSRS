@@ -12,7 +12,7 @@ Secret key hanya dipakai di route server. Jangan memakai prefix `NEXT_PUBLIC_` u
 
 ## CSV
 
-Kolom wajib: `Member,Sesi,Jalur,Tipe Tiket`. Nilai jalur tidak langsung dipercaya; file dicocokkan dengan slot aktif di database sebelum disimpan.
+Kolom wajib: `Member,Sesi,Tipe Tiket`. Jalur dicocokkan otomatis dari slot aktif. CSV lama yang masih memiliki kolom `Jalur` tetap didukung.
 
 ## Deploy Vercel
 

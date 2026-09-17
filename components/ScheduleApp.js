@@ -9,6 +9,7 @@ import { requestJson } from "../lib/client-api";
 
 const ALL = "Semua";
 const TICKET_TABS = ["2-Shot", "Meet & Greet"];
+const REFRESH_INTERVAL_MS = 20_000;
 const naturalCollator = new Intl.Collator("id-ID", { numeric: true });
 
 function includes(value, query) {
@@ -39,6 +40,7 @@ function downloadTemplate(slots) {
 
 export default function ScheduleApp() {
   const dialogRef = useRef(null);
+  const refreshInFlight = useRef(false);
   const [data, setData] = useState({ loading: true, configured: true, event: null, slots: [] });
   const [ticket, setTicket] = useState(TICKET_TABS[0]);
   const [session, setSession] = useState(ALL);
@@ -53,16 +55,26 @@ export default function ScheduleApp() {
   const [copyStatus, setCopyStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState("light");
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const load = useCallback(async () => {
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
     try {
       const payload = await requestJson("/api/timetable", { cache: "no-store" }, "Jadwal belum bisa dimuat. Coba lagi.");
       setData({ loading: false, configured: payload.configured !== false, event: payload.event, slots: payload.slots ?? [], error: payload.error });
+      setLastUpdated(new Date());
     } catch (error) {
       setData((current) => ({ ...current, loading: false, error: error.message }));
-    }
+    } finally { refreshInFlight.current = false; }
   }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const refresh = () => { if (document.visibilityState === "visible") load(); };
+    const timer = setInterval(refresh, REFRESH_INTERVAL_MS);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
+  }, [load]);
   useEffect(() => { setTheme(document.documentElement.dataset.theme || "light"); }, []);
 
   const sessions = useMemo(() => unique(data.slots.filter((slot) => slot.ticket_type === ticket).map((slot) => slot.session_label)).sort(naturalCollator.compare), [data.slots, ticket]);
@@ -139,7 +151,7 @@ export default function ScheduleApp() {
 
     <main>
       <section className="workspace" id="jadwal" aria-labelledby="schedule-title">
-        <div className="workspace-heading"><div><h1 id="schedule-title">{data.event?.name ?? "Jadwal event"}</h1><p>{data.event ? [data.event.event_date && new Date(`${data.event.event_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }), data.event.venue].filter(Boolean).join(" · ") : "2-Shot dan Meet & Greet"}</p></div></div>
+        <div className="workspace-heading"><div><h1 id="schedule-title">{data.event?.name ?? "Jadwal event"}</h1><p>{data.event ? [data.event.event_date && new Date(`${data.event.event_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }), data.event.venue].filter(Boolean).join(" · ") : "2-Shot dan Meet & Greet"}</p></div><span className="refresh-status"><i aria-hidden="true" />{lastUpdated ? `Diperbarui ${lastUpdated.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Memuat pembaruan"}</span></div>
 
         <div className="schedule-tabs" role="tablist" aria-label="Tipe tiket">
           {TICKET_TABS.map((value) => <button key={value} role="tab" aria-selected={ticket === value} aria-controls="session-cards" onClick={() => { setTicket(value); setSession(ALL); }}>{value}<span>{unique(data.slots.filter((slot) => slot.ticket_type === value).map((slot) => slot.session_label)).length} sesi</span></button>)}
@@ -173,7 +185,7 @@ export default function ScheduleApp() {
       <div className="mode-tabs" role="tablist" aria-label="Cara input"><button role="tab" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button role="tab" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
       <form className="input-form" onSubmit={save}>
         <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength={PARTICIPANT_NAME_MIN} maxLength={PARTICIPANT_NAME_MAX} autoComplete="name" placeholder="Nama panggilan" required /><small>{name.length}/{PARTICIPANT_NAME_MAX} karakter</small></label>
-        {mode === "csv" ? <div className="csv-box"><div className="csv-guide"><strong>Cara mengisi CSV</strong><ol><li>Unduh template yang sudah berisi contoh dari event ini.</li><li>Ganti atau hapus baris contoh, lalu isi satu jadwal per baris. Jangan ubah judul kolom.</li><li>Pastikan nama member, sesi, jalur, dan tipe tiket sama seperti yang tampil di jadwal.</li></ol></div><div className="csv-actions"><button type="button" className="secondary-button" onClick={() => downloadTemplate(data.slots)}>Unduh template dengan contoh</button><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih CSV yang sudah diisi</label></div><small>Contoh di template diambil dari {Math.min(data.slots.length, 2)} jadwal pertama dan tidak otomatis dipilih sampai file diunggah.</small></div>
+        {mode === "csv" ? <div className="csv-box"><div className="csv-guide"><strong>Cara mengisi CSV</strong><ol><li>Unduh template yang sudah berisi contoh dari event ini.</li><li>Ganti atau hapus baris contoh, lalu isi satu jadwal per baris. Jangan ubah judul kolom.</li><li>Cukup isi member, sesi, dan tipe tiket. Jalur akan mengikuti jadwal secara otomatis.</li></ol></div><div className="csv-actions"><button type="button" className="secondary-button" onClick={() => downloadTemplate(data.slots)}>Unduh template dengan contoh</button><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih CSV yang sudah diisi</label></div><small>Contoh di template diambil dari {Math.min(data.slots.length, 2)} jadwal pertama. CSV lama yang masih memiliki kolom Jalur tetap dapat digunakan.</small></div>
           : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Ketik nama member…" /></label><div className="picker-ticket-tabs" role="tablist" aria-label="Tipe tiket pilihan manual">{pickerGroups.map(([type, slots]) => <button type="button" role="tab" aria-selected={pickerTicket === type} key={type} onClick={() => setPickerTicket(type)}>{type}<span>{slots.length}</span></button>)}</div><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerVisible.length} hasil</span></legend>{pickerVisible.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.group_name}</small></span></label>)}{!pickerVisible.length && <p className="slot-picker-empty">Tidak ada member yang cocok.</p>}</fieldset></div>}
         <p className="form-feedback" role="status">{feedback}</p>
         <button className="primary-button submit-button" disabled={saving || selected.length === 0 || name.trim().length < PARTICIPANT_NAME_MIN || name.trim().length > PARTICIPANT_NAME_MAX}>{saving ? "Menyimpan…" : `Simpan ${selected.length || ""} jadwal`}</button>

@@ -39,6 +39,10 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   if (overflow > 1) throw new Error(`${name}: overflow horizontal ${overflow}px`);
   await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/${name}.png`, fullPage: true });
   if (name === "desktop-data") {
+    const refreshed = page.waitForResponse((response) => response.url().includes("/api/timetable"));
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    await refreshed;
+    if (!await page.getByText(/Diperbarui \d{2}[.:]\d{2}[.:]\d{2}/).isVisible()) throw new Error("Status auto-refresh tidak terlihat.");
     await page.getByLabel("Hanya yang ada teman").check();
     const filteredCards = page.locator("#session-cards");
     if (await filteredCards.getByText("Fiony", { exact: true }).isVisible() || !await filteredCards.getByText("Ekin", { exact: true }).isVisible()) throw new Error("Filter teman tidak menyembunyikan sesi kosong.");
