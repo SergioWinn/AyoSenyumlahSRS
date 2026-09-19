@@ -91,6 +91,50 @@ for (const { name, width, height, reducedMotion = "no-preference" } of [
   await page.close();
 }
 
+const denseSlots = Array.from({ length: 120 }, (_, index) => ({
+  id: `dense-${index + 1}`,
+  session_label: `Sesi ${(index % 8) + 1}`,
+  lane_label: `Jalur ${(index % 12) + 1}`,
+  member_name: `Member Dengan Nama Panjang ${String(index + 1).padStart(3, "0")}`,
+  group_name: index % 5 ? "JKT48" : "AKB48",
+  ticket_type: "2-Shot",
+  schedules: [],
+}));
+
+for (const { name, width, height } of [
+  { name: "compact-320", width: 320, height: 568 },
+  { name: "compact-375", width: 375, height: 667 },
+  { name: "mobile-414", width: 414, height: 896 },
+  { name: "tablet-768", width: 768, height: 1024 },
+]) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(`${name}: ${message.text()}`); });
+  await page.route("**/api/timetable", (route) => route.fulfill({ json: { configured: true, event: { name: "Festival Oktober" }, slots: denseSlots } }));
+  await page.route("https://wsrv.nl/**", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" fill="#ead9d2"/></svg>' }));
+  await page.goto("http://localhost:3000", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Isi jadwal", exact: true }).click();
+  await page.getByLabel("Nama kamu").fill("Sergio");
+
+  const form = page.locator(".input-form");
+  const picker = page.locator(".slot-picker");
+  const choices = picker.locator('input[type="checkbox"]');
+  const layout = await form.evaluate((element) => ({ clientHeight: element.clientHeight, scrollHeight: element.scrollHeight }));
+  if (layout.scrollHeight > layout.clientHeight + 1) throw new Error(`${name}: form masih memiliki nested scroll (${layout.clientHeight}/${layout.scrollHeight}).`);
+
+  const firstRow = picker.locator("label").first();
+  const [pickerBox, firstRowBox] = await Promise.all([picker.boundingBox(), firstRow.boundingBox()]);
+  if (!pickerBox || !firstRowBox || firstRowBox.y + firstRowBox.height > pickerBox.y + pickerBox.height + 1) throw new Error(`${name}: satu baris checkbox tidak terlihat utuh (${JSON.stringify({ pickerBox, firstRowBox })}).`);
+
+  await choices.first().check();
+  await choices.last().scrollIntoViewIfNeeded();
+  await choices.last().check();
+  if (await page.getByRole("button", { name: "Simpan 2 jadwal" }).count() !== 1) throw new Error(`${name}: checkbox pertama/terakhir tidak dapat dipilih.`);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (overflow > 1) throw new Error(`${name}: dialog menyebabkan overflow horizontal ${overflow}px.`);
+  await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/${name}-dense-dialog.png` });
+  await page.close();
+}
+
 const adminCalls = [];
 const adminPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 adminPage.on("console", (message) => { if (message.type() === "error") consoleErrors.push(`admin: ${message.text()}`); });
@@ -142,4 +186,4 @@ await adminFailurePage.close();
 
 await browser.close();
 if (consoleErrors.length) throw new Error(consoleErrors.join("\n"));
-console.log("Visual check passed: 6 viewports, admin CRUD, and safe error states.");
+console.log("Visual check passed: 6 page viewports, 4 dense-dialog viewports, admin CRUD, and safe error states.");
