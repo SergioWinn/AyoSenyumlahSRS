@@ -1,8 +1,25 @@
 {
   "name": "srs-ayo-senyumlah",
   "version": "1.0.0",
+  "description": "Timetable komunitas untuk sesi 2-Shot dan Meet & Greet JKT48/AKB48.",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SergioWinn/AyoSenyumlahSRS.git"
+  },
+  "homepage": "https://ayo-senyumlah-srs.vercel.app",
+  "bugs": {
+    "url": "https://github.com/SergioWinn/AyoSenyumlahSRS/issues"
+  },
+  "keywords": [
+    "nextjs",
+    "supabase",
+    "vercel",
+    "jkt48",
+    "akb48",
+    "event-schedule"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
