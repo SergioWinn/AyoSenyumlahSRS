@@ -104,8 +104,10 @@ const denseSlots = Array.from({ length: 120 }, (_, index) => ({
 for (const { name, width, height } of [
   { name: "compact-320", width: 320, height: 568 },
   { name: "compact-375", width: 375, height: 667 },
+  { name: "safari-390", width: 390, height: 844 },
   { name: "mobile-414", width: 414, height: 896 },
   { name: "tablet-768", width: 768, height: 1024 },
+  { name: "zoomed-desktop", width: 1280, height: 720 },
 ]) {
   const page = await browser.newPage({ viewport: { width, height } });
   page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(`${name}: ${message.text()}`); });
@@ -124,6 +126,7 @@ for (const { name, width, height } of [
   const firstRow = picker.locator("label").first();
   const [pickerBox, firstRowBox] = await Promise.all([picker.boundingBox(), firstRow.boundingBox()]);
   if (!pickerBox || !firstRowBox || firstRowBox.y + firstRowBox.height > pickerBox.y + pickerBox.height + 1) throw new Error(`${name}: satu baris checkbox tidak terlihat utuh (${JSON.stringify({ pickerBox, firstRowBox })}).`);
+  if (["safari-390", "zoomed-desktop"].includes(name) && pickerBox.height < firstRowBox.height * 2) throw new Error(`${name}: area daftar terlalu pendek (${pickerBox.height}px).`);
 
   await choices.first().check();
   await choices.last().scrollIntoViewIfNeeded();
@@ -186,4 +189,4 @@ await adminFailurePage.close();
 
 await browser.close();
 if (consoleErrors.length) throw new Error(consoleErrors.join("\n"));
-console.log("Visual check passed: 6 page viewports, 4 dense-dialog viewports, admin CRUD, and safe error states.");
+console.log("Visual check passed: 6 page viewports, 6 dense-dialog viewports, admin CRUD, and safe error states.");

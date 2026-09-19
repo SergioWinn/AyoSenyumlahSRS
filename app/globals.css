@@ -96,7 +96,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .footer-inner > span a { color: var(--color-accent-deep); font-weight: 650; text-decoration: none; }
 .tako-link { align-items: center; border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-card); display: inline-flex; font-weight: 650; min-height: 2.75rem; padding-inline: var(--space-md); text-decoration: none; white-space: nowrap; }
 
-.input-dialog { background: var(--color-surface); border: 0; border-radius: var(--radius-dialog); box-shadow: 0 1.5rem 5rem var(--color-shadow); color: var(--color-ink); margin: auto; max-height: min(48rem, 90svh); max-width: 44rem; padding: 0; width: calc(100% - 2rem); }
+.input-dialog { background: var(--color-surface); border: 0; border-radius: var(--radius-dialog); box-shadow: 0 1.5rem 5rem var(--color-shadow); color: var(--color-ink); margin: auto; max-height: min(44rem, calc(100svh - var(--space-md))); max-width: 38rem; padding: 0; width: calc(100% - 2rem); }
 .input-dialog::backdrop { background: var(--color-overlay); opacity: .72; }
 .input-dialog[open] { animation: dialog-in var(--dur-short) var(--ease-out); }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(.75rem); } }
@@ -317,7 +317,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 }
 .input-form {
   grid-template-rows: auto minmax(0, 1fr) auto;
-  max-height: calc(90svh - 9rem);
+  max-height: none;
   min-height: 0;
   overflow: hidden;
 }
@@ -374,17 +374,14 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
   .schedule-tabs .tab-name-short { display: inline; }
   .schedule-tabs button { font-size: var(--text-md); gap: var(--space-xs); }
   .schedule-tabs .tab-count { font-size: var(--text-xs); }
-  .dialog-actions { padding-bottom: max(var(--space-md), env(safe-area-inset-bottom)); }
+  .input-dialog {
+    max-height: calc(100svh - var(--space-sm));
+    width: calc(100% - var(--space-sm));
+  }
   .admin-section, .admin-header { padding: var(--space-md); }
 }
 
-@media (max-width: 26rem) and (max-height: 42rem) {
-  .input-dialog {
-    border-radius: 0;
-    height: 100dvh;
-    max-height: 100dvh;
-    width: 100%;
-  }
+@media (max-width: 26rem), (max-height: 50rem) {
   .dialog-top { padding: var(--space-xs); }
   .dialog-top span { display: none; }
   .dialog-top h2 { font-size: var(--text-xl); margin: 0; }
@@ -394,5 +391,14 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
   .dialog-actions {
     margin-inline: calc(var(--space-sm) * -1);
     padding: var(--space-sm) var(--space-sm) max(var(--space-sm), env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 26rem) and (max-height: 42rem) {
+  .input-dialog {
+    border-radius: 0;
+    height: 100dvh;
+    max-height: 100dvh;
+    width: 100%;
   }
 }
