@@ -12,6 +12,7 @@ test("nickname dikenali sebagai identitas member", () => {
 });
 
 test("foto member memakai sumber resmi sesuai grup", () => {
+  assert.match(memberPhotoUrl("Feni", "JKT48"), /2026%2F10%2Ffenifitriyantiphoto-1-942dd7\.jpg/);
   assert.match(memberPhotoUrl("Freya", "JKT48"), /freya_jayawardana\.jpg/);
   assert.match(memberPhotoUrl("Maxine Faye", "JKT48"), /maxine_faye_lee\.jpg/);
   assert.match(memberPhotoUrl("Erii", "AKB48"), /83100927\.jpg/);
