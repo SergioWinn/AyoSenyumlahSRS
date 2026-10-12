@@ -188,6 +188,42 @@ await adminFailurePage.goto("http://localhost:3000/admin", { waitUntil: "network
 if (!await adminFailurePage.getByText("Data admin gagal dimuat.", { exact: true }).isVisible() || await adminFailurePage.getByText("SQL connection string").count()) throw new Error("Error pemuatan admin tidak ditangani dengan aman.");
 await adminFailurePage.close();
 
+const longNameSlots = [{ ...slots[1], schedules: [{ id: "long-name", participant_name: "N".repeat(40) }] }];
+for (const { width, height } of [
+  { width: 320, height: 780 }, { width: 375, height: 900 },
+  { width: 600, height: 900 }, { width: 667, height: 375 },
+  { width: 768, height: 1024 }, { width: 1024, height: 900 }, { width: 1440, height: 1000 },
+]) {
+  const page = await browser.newPage({ viewport: { width, height }, hasTouch: true });
+  await page.route("**/api/timetable", (route) => route.fulfill({ json: { configured: true, event: { name: "Festival Oktober" }, slots: longNameSlots } }));
+  await page.route("https://wsrv.nl/**", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"/>' }));
+  await page.goto("http://localhost:3000", { waitUntil: "networkidle" });
+  const nameFits = await page.locator(".slot-people span").evaluate((element) => {
+    const name = element.getBoundingClientRect();
+    const card = element.closest("article").getBoundingClientRect();
+    return name.left >= card.left && name.right <= card.right && element.scrollWidth <= element.clientWidth + 1;
+  });
+  if (!nameFits) throw new Error(`${width}: nama panjang keluar dari kartu peserta.`);
+  await page.route("**/api/admin/status", (route) => route.fulfill({ json: { authenticated: true, event: { name: "Festival Oktober" }, slots: longNameSlots, sources: [{ id: "source-1", group_name: "JKT48", ticket_type: "2-Shot", exclusive_code: "test", sync_error: "E".repeat(100) }] } }));
+  await page.route("**/api/admin/sync", (route) => route.fulfill({ json: { results: [{ ok: true }] } }));
+  await page.goto("http://localhost:3000/admin", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Hapus", exact: true }).tap();
+  const clipped = await page.locator(".admin-schedule-row, .source-row").evaluateAll((rows) => rows.flatMap((row) => {
+    const bounds = row.getBoundingClientRect();
+    return [...row.querySelectorAll("strong, small, button, a, .file-button")].filter((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.left < bounds.left - 1 || rect.right > bounds.right + 1 || element.scrollWidth > element.clientWidth + 1;
+    }).map((element) => element.textContent);
+  }));
+  if (clipped.length) throw new Error(`${width}: konten admin terpotong: ${clipped.join(", ")}`);
+  const syncResponse = page.waitForResponse((response) => response.url().includes("/api/admin/sync"));
+  await page.getByRole("button", { name: "Sinkronkan", exact: true }).tap();
+  await syncResponse;
+  await page.getByText("Selesai. 1 sumber diperbarui.", { exact: true }).waitFor();
+  if (width === 375 || width === 1440) await page.screenshot({ path: `scrollcraft/builds/ayo-senyumlah/adapt-admin-${width}.png`, fullPage: true });
+  await page.close();
+}
+
 await browser.close();
 if (consoleErrors.length) throw new Error(consoleErrors.join("\n"));
-console.log("Visual check passed: 6 page viewports, 7 dense-dialog viewports, admin CRUD, and safe error states.");
+console.log("Visual check passed: 6 page viewports, 7 dense-dialog viewports, admin CRUD, safe error states, and 7 responsive long-name/source-action viewports with synthesized touch.");

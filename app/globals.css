@@ -82,7 +82,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .slot-member h4 { font-family: var(--font-display); font-size: var(--text-base); letter-spacing: -.02em; line-height: 1.2; margin: 0; overflow-wrap: anywhere; }
 .slot-people { align-content: start; display: flex; flex: 1; flex-wrap: wrap; gap: var(--space-2xs); justify-content: center; margin-block: var(--space-md); width: 100%; }
 .slot-people small { color: var(--color-neutral); flex-basis: 100%; }
-.slot-people span { background: var(--color-accent-soft); border-radius: var(--radius-control); color: var(--color-accent-deep); font-size: var(--text-sm); padding: var(--space-2xs) var(--space-sm); }
+.slot-people span { background: var(--color-accent-soft); border-radius: var(--radius-control); color: var(--color-accent-deep); font-size: var(--text-sm); max-width: 100%; overflow-wrap: anywhere; padding: var(--space-2xs) var(--space-sm); }
 .add-slot { background: var(--color-surface); border-color: var(--color-rule-2); border-radius: var(--radius-card); font-size: var(--text-sm); font-weight: 650; margin-top: auto; padding: 0 var(--space-sm); width: 100%; }
 .state-panel { border-block: var(--rule-hair) solid var(--color-rule); padding: var(--space-2xl) 0; }
 .state-panel strong { font-family: var(--font-display); font-size: var(--text-lg); }
@@ -162,13 +162,16 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .admin-schedule-form input, .admin-schedule-form select { background: var(--color-surface); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-card); min-height: 3rem; min-width: 0; padding: 0 var(--space-md); width: 100%; }
 .admin-form-actions, .admin-schedule-actions { align-items: center; display: flex; gap: var(--space-sm); }
 .admin-schedule-list { border-top: var(--rule-hair) solid var(--color-rule-2); margin-top: var(--space-xl); }
-.admin-schedule-row { align-items: center; border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; justify-content: space-between; padding: var(--space-md) 0; }
-.admin-schedule-row > div:first-child { display: grid; }
+.admin-schedule-row { align-items: center; border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; flex-wrap: wrap; gap: var(--space-md); justify-content: space-between; padding: var(--space-md) 0; }
+.admin-schedule-row > div:first-child { display: grid; flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+.admin-schedule-actions { flex-wrap: wrap; max-width: 100%; }
+.admin-schedule-actions .quiet-button, .source-actions .quiet-button { min-height: 2.75rem; }
 .admin-schedule-row small, .admin-empty { color: var(--color-neutral); }
 .source-list { border-top: var(--rule-hair) solid var(--color-rule-2); margin-top: var(--space-2xl); }
-.source-row { align-items: center; border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; justify-content: space-between; padding: var(--space-lg) 0; }
+.source-row { align-items: center; border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; flex-wrap: wrap; gap: var(--space-md); justify-content: space-between; padding: var(--space-lg) 0; }
 .source-row div { display: grid; }
-.source-row .source-actions { align-items: center; display: flex; gap: var(--space-sm); }
+.source-row > div:first-child { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+.source-row .source-actions { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-sm); max-width: 100%; }
 .source-row small { color: var(--color-neutral); }
 .error-text { color: var(--color-error) !important; }
 
@@ -207,7 +210,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
   .member-card { min-height: 15.5rem; padding: var(--space-sm); }
   .member-photo { height: 4rem; width: 4rem; }
   .footer-inner { align-items: start; flex-direction: column; gap: var(--space-md); }
-  .admin-header, .admin-section-heading, .admin-schedule-row, .source-row { align-items: start; flex-direction: column; gap: var(--space-md); }
+  .admin-header, .admin-section-heading { align-items: start; flex-direction: column; gap: var(--space-md); }
   .admin-schedule-form { grid-template-columns: 1fr; }
   .admin-form-actions { grid-column: auto; }
 }
