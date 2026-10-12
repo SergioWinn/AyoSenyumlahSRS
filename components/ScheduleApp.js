@@ -147,7 +147,7 @@ export default function ScheduleApp() {
   return <>
     <header className="site-header">
       <a className="wordmark" href="#jadwal"><Image src="/srs-logo.webp" alt="Logo Sumber Rezeki" width={64} height={64} priority /><span className="brand-name">Ayo Senyumlah</span></a>
-      <nav aria-label="Aksi utama"><button className="theme-toggle" type="button" aria-label={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} title={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} onClick={toggleTheme}><span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span></button><button className="primary-button" onClick={() => openInput()}>Isi jadwal</button></nav>
+      <nav aria-label="Aksi utama"><button className="theme-toggle" type="button" aria-label={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} title={`Gunakan tema ${theme === "dark" ? "terang" : "gelap"}`} onClick={toggleTheme}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{theme === "dark" ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></> : <path d="M20 15.5A8.5 8.5 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5Z" />}</svg></button><button className="primary-button" onClick={() => openInput()}>Isi jadwal</button></nav>
     </header>
 
     <main>
@@ -181,7 +181,7 @@ export default function ScheduleApp() {
     <footer className="site-footer"><div className="footer-inner"><span>Developed by <a href="https://x.com/estrellawin19" target="_blank" rel="noopener noreferrer">@estrellawin19</a></span><a className="tako-link" href="https://tako.id/Sportagame19Win" target="_blank" rel="noopener noreferrer">Support project ↗</a></div></footer>
 
     <dialog className="input-dialog" aria-labelledby="input-title" ref={dialogRef} onClick={closeOnBackdrop} onClose={() => setFeedback("")}>
-      <form method="dialog" className="dialog-top"><div><span>Isi jadwal</span><h2 id="input-title">Pilih sesi</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>
+      <form method="dialog" className="dialog-top"><div><span>Isi jadwal</span><h2 id="input-title">Pilih sesi</h2></div><button className="dialog-close" aria-label="Tutup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></form>
       <div className="mode-tabs" role="tablist" aria-label="Cara input" onKeyDown={navigateTabs}><button type="button" id="mode-manual" role="tab" tabIndex={mode === "manual" ? 0 : -1} aria-controls="input-panel" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button type="button" id="mode-csv" role="tab" tabIndex={mode === "csv" ? 0 : -1} aria-controls="input-panel" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
       <div className="input-panel" id="input-panel" role="tabpanel" aria-labelledby={`mode-${mode}`}><form className="input-form" onSubmit={save}>
         <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength={PARTICIPANT_NAME_MIN} maxLength={PARTICIPANT_NAME_MAX} autoComplete="name" placeholder="Nama panggilan" required /><small>{name.length}/{PARTICIPANT_NAME_MAX} karakter</small></label>

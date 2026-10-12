@@ -46,7 +46,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .workspace { background: var(--color-surface); min-height: calc(100svh - 4.75rem); padding: var(--space-xl) var(--page-gutter) var(--space-3xl); }
 .workspace > * { margin-inline: auto; max-width: var(--page-max); }
 .workspace-heading { align-items: end; display: flex; justify-content: space-between; margin-bottom: var(--space-xl); }
-.workspace-heading h1 { font-family: var(--font-display); font-size: var(--text-2xl); letter-spacing: -.045em; line-height: 1.05; margin: 0 0 var(--space-xs); min-width: 0; overflow-wrap: anywhere; }
+.workspace-heading h1 { font-family: var(--font-display); font-size: var(--text-2xl); letter-spacing: -.035em; line-height: 1.05; margin: 0 0 var(--space-xs); min-width: 0; overflow-wrap: anywhere; }
 .workspace-heading p { color: var(--color-muted); margin: 0; }
 .refresh-status { align-items: center; color: var(--color-neutral); display: inline-flex; font-size: var(--text-xs); gap: var(--space-xs); white-space: nowrap; }
 .refresh-status i { background: var(--color-success); border-radius: 50%; height: .5rem; width: .5rem; }
@@ -57,7 +57,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .filters { border-block: var(--rule-hair) solid var(--color-rule); display: grid; grid-template-columns: minmax(7rem, .55fr) repeat(2, minmax(10rem, 1fr)) auto auto; margin-bottom: var(--space-2xl); }
 .filters label { padding: var(--space-md) var(--space-lg); }
 .filters label + label { border-left: var(--rule-hair) solid var(--color-rule); }
-.filters label > span, .input-form label > span { color: var(--color-neutral); display: block; font-size: var(--text-xs); font-weight: 650; letter-spacing: .04em; margin-bottom: var(--space-2xs); text-transform: uppercase; }
+.filters label > span, .input-form > label > span, .picker-search > span { color: var(--color-neutral); display: block; font-size: var(--text-xs); font-weight: 650; letter-spacing: .04em; margin-bottom: var(--space-2xs); text-transform: uppercase; }
 .filters select, .filters input { background: transparent; border: 0; min-height: 2rem; outline: 0; padding: 0; width: 100%; }
 .filters label:focus-within { background: var(--color-paper); box-shadow: inset 0 -2px var(--color-accent); }
 .filters .presence-filter { align-items: center; cursor: pointer; display: flex; gap: var(--space-sm); white-space: nowrap; }
@@ -102,7 +102,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(.75rem); } }
 .dialog-top { align-items: center; border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; justify-content: space-between; padding: var(--space-xs); }
 .dialog-top span { display: none; }
-.dialog-top h2 { font-family: var(--font-display); font-size: var(--text-xl); letter-spacing: -.04em; line-height: 1; margin: 0; }
+.dialog-top h2 { font-family: var(--font-display); font-size: var(--text-xl); letter-spacing: -.035em; line-height: 1; margin: 0; }
 .dialog-close { background: transparent; border-color: var(--color-rule); border-radius: 50%; font-size: var(--text-lg); height: 2.75rem; padding: 0; width: 2.75rem; }
 .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; }
 .mode-tabs button { background: transparent; border-bottom-color: var(--color-rule); min-height: 2.75rem; }
@@ -123,9 +123,9 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .slot-picker-title { font-weight: 650; margin: 0 0 var(--space-xs); width: 100%; }
 .slot-picker-title span { color: var(--color-neutral); float: right; font-size: var(--text-sm); font-weight: 400; }
 .slot-picker label { align-items: center; border-top: var(--rule-hair) solid var(--color-rule); cursor: pointer; display: flex; gap: var(--space-sm); min-height: 2.75rem; padding: var(--space-xs) 0; }
-.slot-picker label > span { display: grid; }
+.slot-picker label > span { display: grid; min-width: 0; overflow-wrap: anywhere; }
 .slot-picker small { color: var(--color-neutral); }
-.slot-picker input { accent-color: var(--color-accent); height: 1.15rem; width: 1.15rem; }
+.slot-picker input { accent-color: var(--color-accent); flex-shrink: 0; height: 1.15rem; width: 1.15rem; }
 .slot-picker-empty { color: var(--color-neutral); margin: 0; padding: var(--space-lg) 0; text-align: center; }
 .csv-box { align-items: start; border-block: var(--rule-hair) solid var(--color-rule); display: grid; gap: var(--space-sm); min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--space-lg) 0; }
 .csv-guide { max-width: 65ch; }
@@ -142,7 +142,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 
 .admin-shell { margin: 0 auto; max-width: 60rem; min-height: 100svh; padding: var(--space-2xl) var(--page-gutter); }
 .admin-login { display: grid; gap: var(--space-lg); margin-top: var(--space-3xl); max-width: 25rem; }
-.admin-login h1, .admin-header h1 { font-family: var(--font-display); font-size: var(--text-3xl); letter-spacing: -.05em; line-height: 1; margin: 0; }
+.admin-login h1, .admin-header h1 { font-family: var(--font-display); font-size: var(--text-3xl); letter-spacing: -.035em; line-height: 1; margin: 0; }
 .admin-login label { display: grid; gap: var(--space-xs); }
 .admin-header { align-items: end; display: flex; justify-content: space-between; margin-top: var(--space-2xl); }
 .admin-header .wordmark { display: inline-block; margin-bottom: var(--space-2xl); }
@@ -153,9 +153,11 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .admin-cookie input:focus-visible { outline-color: var(--color-focus); }
 .admin-cookie small { color: var(--color-neutral); }
 .notice { background: var(--color-accent-soft); color: var(--color-accent-deep); padding: var(--space-md); }
+.workspace > .notice { margin-bottom: var(--space-xl); }
+.notice p { margin: 0 0 var(--space-sm); overflow-wrap: anywhere; }
 .admin-section { border-top: var(--rule-hair) solid var(--color-rule-2); margin-top: var(--space-2xl); padding-top: var(--space-xl); }
 .admin-section-heading { align-items: end; display: flex; justify-content: space-between; }
-.admin-section-heading h2 { font-family: var(--font-display); font-size: var(--text-xl); letter-spacing: -.04em; margin: 0; }
+.admin-section-heading h2 { font-family: var(--font-display); font-size: var(--text-xl); letter-spacing: -.035em; margin: 0; }
 .admin-section-heading p { color: var(--color-neutral); margin: var(--space-xs) 0 0; }
 .admin-schedule-form { align-items: end; display: grid; gap: var(--space-md); grid-template-columns: minmax(10rem, .7fr) minmax(15rem, 1.5fr) auto; margin-top: var(--space-xl); }
 .admin-schedule-form label { display: grid; gap: var(--space-xs); }
@@ -177,9 +179,9 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .error-text { color: var(--color-error) !important; }
 
 @media (hover: hover) and (pointer: fine) {
-  .primary-button:hover { background: var(--color-accent-deep); }
-  .secondary-button:hover, .danger-button:hover, .add-slot:hover, .dialog-close:hover, .theme-toggle:hover { background: var(--color-paper-2); border-color: var(--color-ink-2); }
-  .quiet-button:hover { color: var(--color-accent-deep); }
+  .primary-button:not(:disabled):hover { background: var(--color-accent-deep); }
+  .secondary-button:not(:disabled):hover, .danger-button:not(:disabled):hover, .add-slot:hover, .dialog-close:hover, .theme-toggle:hover { background: var(--color-paper-2); border-color: var(--color-ink-2); }
+  .quiet-button:not(:disabled):hover { color: var(--color-accent-deep); }
   .member-card:hover { border-color: var(--color-accent); }
   .schedule-tabs button:hover { background: var(--color-paper-2); }
   .footer-inner > span a:hover { text-decoration: underline; }
@@ -265,6 +267,8 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
   white-space: nowrap;
 }
 .schedule-tabs button + button { border-left: var(--rule-hair) solid var(--color-rule); }
+.schedule-tabs button:focus-visible, .mode-tabs button:focus-visible, .picker-ticket-tabs button:focus-visible { outline-offset: calc(var(--space-2xs) * -1); }
+.theme-toggle svg, .dialog-close svg { height: 1.25rem; width: 1.25rem; }
 .schedule-tabs .tab-name {
   color: inherit;
   font-family: var(--font-display);
