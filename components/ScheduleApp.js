@@ -18,6 +18,16 @@ function unique(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function navigateTabs(event) {
+  const tabs = [...event.currentTarget.querySelectorAll('[role="tab"]')];
+  const index = tabs.indexOf(event.target);
+  if (index < 0 || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  tabs[next].focus();
+  tabs[next].click();
+}
+
 function MemberPhoto({ slot }) {
   const url = memberPhotoUrl(slot.member_name, slot.group_name);
   const initials = slot.member_name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -50,7 +60,7 @@ export default function ScheduleApp() {
   const load = useCallback(async () => {
     if (refreshInFlight.current) return;
     refreshInFlight.current = true;
-    setRefreshState((current) => current === "online" ? "refreshing" : current);
+    setRefreshState((current) => current === "loading" ? current : "refreshing");
     try {
       const payload = await requestJson("/api/timetable", { cache: "no-store" }, "Jadwal belum bisa dimuat. Coba lagi.");
       setData({ loading: false, configured: payload.configured !== false, event: payload.event, slots: payload.slots ?? [], error: payload.error });
@@ -98,6 +108,7 @@ export default function ScheduleApp() {
   }
 
   function closeOnBackdrop(event) {
+    if (event.target !== event.currentTarget) return;
     const { left, right, top, bottom } = event.currentTarget.getBoundingClientRect();
     if (event.clientX < left || event.clientX > right || event.clientY < top || event.clientY > bottom) event.currentTarget.close();
   }
@@ -143,8 +154,8 @@ export default function ScheduleApp() {
       <section className="workspace" id="jadwal" aria-labelledby="schedule-title">
         <div className="workspace-heading"><div><h1 id="schedule-title">{data.event?.name ?? "Jadwal event"}</h1><p>{data.event ? [data.event.event_date && new Date(`${data.event.event_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }), data.event.venue].filter(Boolean).join(" · ") : "2-Shot dan Meet & Greet"}</p></div><span className={`refresh-status is-${refreshState}`}><i aria-hidden="true" />{refreshState === "error" ? "Pembaruan gagal" : lastUpdated ? `Diperbarui ${lastUpdated.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Memuat pembaruan"}</span></div>
 
-        <div className="schedule-tabs" role="tablist" aria-label="Tipe tiket">
-          {TICKET_TABS.map((value) => <button key={value} role="tab" aria-label={value} aria-selected={ticket === value} aria-controls="session-cards" onClick={() => { setTicket(value); setSession(ALL); setMemberFilter(ALL_MEMBERS); setFriendFilter(ALL_FRIENDS); }}><span className="tab-name tab-name-full" aria-hidden="true">{value}</span><span className="tab-name tab-name-short" aria-hidden="true">{value === "Meet & Greet" ? "MnG" : value}</span><span className="tab-count" aria-hidden="true">{unique(data.slots.filter((slot) => slot.ticket_type === value).map((slot) => slot.session_label)).length} sesi</span></button>)}
+        <div className="schedule-tabs" role="tablist" aria-label="Tipe tiket" onKeyDown={navigateTabs}>
+          {TICKET_TABS.map((value, index) => <button key={value} id={`ticket-tab-${index}`} role="tab" tabIndex={ticket === value ? 0 : -1} aria-label={value} aria-selected={ticket === value} aria-controls="session-cards" onClick={() => { setTicket(value); setSession(ALL); setMemberFilter(ALL_MEMBERS); setFriendFilter(ALL_FRIENDS); }}><span className="tab-name tab-name-full" aria-hidden="true">{value}</span><span className="tab-name tab-name-short" aria-hidden="true">{value === "Meet & Greet" ? "MnG" : value}</span><span className="tab-count" aria-hidden="true">{unique(data.slots.filter((slot) => slot.ticket_type === value).map((slot) => slot.session_label)).length} sesi</span></button>)}
         </div>
 
         <div className="filters schedule-filters" aria-label="Filter jadwal">
@@ -155,26 +166,29 @@ export default function ScheduleApp() {
           <output className="visible-count" aria-live="polite">{people.length ? `${people.length} teman terlihat` : "Belum ada teman"}</output>
         </div>
 
+        {data.error && data.event && <div className="notice error-text" role="status"><p>Pembaruan gagal. Jadwal terakhir masih ditampilkan. {data.error}</p><button className="secondary-button" onClick={load}>Coba lagi</button></div>}
+        <div id="session-cards" role="tabpanel" tabIndex={0} aria-labelledby={`ticket-tab-${TICKET_TABS.indexOf(ticket)}`}>
         {data.loading ? <div className="state-panel" role="status">Memuat jadwal…</div>
           : !data.configured ? <div className="state-panel"><strong>Sambungkan Supabase untuk menampilkan jadwal.</strong><p>Salin <code>.env.example</code> menjadi <code>.env.local</code>, lalu isi kredensial proyek.</p></div>
-          : data.error ? <div className="state-panel error-text"><strong>Jadwal gagal dimuat.</strong><p>{data.error}</p><button className="secondary-button" onClick={load}>Coba lagi</button></div>
+          : data.error && !data.event ? <div className="state-panel error-text"><strong>Jadwal gagal dimuat.</strong><p>{data.error}</p><button className="secondary-button" onClick={load}>Coba lagi</button></div>
           : !data.event ? <div className="state-panel"><strong>Belum ada event aktif.</strong><p>Aktifkan satu event dari Supabase, lalu sinkronkan sumbernya.</p></div>
           : !grouped.length ? <div className="state-panel"><strong>Tidak ada jadwal yang cocok.</strong><p>Ubah pilihan filter untuk melihat jadwal lain.</p></div>
-          : <div className="session-list" id="session-cards" role="tabpanel" aria-label={ticket}>{grouped.map(([sessionName, slots]) => <section className="session-group" key={sessionName}><header className="session-label"><div><h3>{sessionName}</h3><span>{ticket}</span></div><span>{slots.length} member</span></header><div className="member-grid">{slots.map((slot) => <article className="member-card" key={slot.id}><span className="lane-label">{slot.lane_label || "Jalur menyusul"}</span><MemberPhoto slot={slot} /><div className="slot-member"><h4>{slot.member_name}</h4><span>{slot.group_name}</span></div><div className="slot-people"><small>{slot.schedules?.length ? `${slot.schedules.length} teman di sesi ini` : "Belum ada teman"}</small>{slot.schedules?.map((item) => <span key={item.id}>{item.participant_name}</span>)}</div><button className="add-slot" aria-label={`Ikut jadwal ${slot.member_name}, ${sessionName}`} onClick={() => openInput(slot.id)}>+ Ikut sesi</button></article>)}</div></section>)}</div>}
+          : <div className="session-list">{grouped.map(([sessionName, slots]) => <section className="session-group" key={sessionName}><header className="session-label"><div><h2>{sessionName}</h2><span>{ticket}</span></div><span>{slots.length} member</span></header><div className="member-grid">{slots.map((slot) => <article className="member-card" key={slot.id}><span className="lane-label">{slot.lane_label || "Jalur menyusul"}</span><MemberPhoto slot={slot} /><div className="slot-member"><h3>{slot.member_name}</h3><span>{slot.group_name}</span></div><div className="slot-people"><small>{slot.schedules?.length ? `${slot.schedules.length} teman di sesi ini` : "Belum ada teman"}</small>{slot.schedules?.map((item) => <span key={item.id}>{item.participant_name}</span>)}</div><button className="add-slot" aria-label={`Ikut jadwal ${slot.member_name}, ${sessionName}`} onClick={() => openInput(slot.id)}>+ Ikut sesi</button></article>)}</div></section>)}</div>}
+        </div>
       </section>
     </main>
 
     <footer className="site-footer"><div className="footer-inner"><span>Developed by <a href="https://x.com/estrellawin19" target="_blank" rel="noopener noreferrer">@estrellawin19</a></span><a className="tako-link" href="https://tako.id/Sportagame19Win" target="_blank" rel="noopener noreferrer">Support project ↗</a></div></footer>
 
-    <dialog className="input-dialog" ref={dialogRef} onClick={closeOnBackdrop} onClose={() => setFeedback("")}>
-      <form method="dialog" className="dialog-top"><div><span>Isi jadwal</span><h2>Pilih sesi</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>
-      <div className="mode-tabs" role="tablist" aria-label="Cara input"><button role="tab" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button role="tab" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
-      <form className="input-form" onSubmit={save}>
+    <dialog className="input-dialog" aria-labelledby="input-title" ref={dialogRef} onClick={closeOnBackdrop} onClose={() => setFeedback("")}>
+      <form method="dialog" className="dialog-top"><div><span>Isi jadwal</span><h2 id="input-title">Pilih sesi</h2></div><button className="dialog-close" aria-label="Tutup">×</button></form>
+      <div className="mode-tabs" role="tablist" aria-label="Cara input" onKeyDown={navigateTabs}><button type="button" id="mode-manual" role="tab" tabIndex={mode === "manual" ? 0 : -1} aria-controls="input-panel" aria-selected={mode === "manual"} onClick={() => setMode("manual")}>Pilih manual</button><button type="button" id="mode-csv" role="tab" tabIndex={mode === "csv" ? 0 : -1} aria-controls="input-panel" aria-selected={mode === "csv"} onClick={() => setMode("csv")}>Impor CSV</button></div>
+      <div className="input-panel" id="input-panel" role="tabpanel" aria-labelledby={`mode-${mode}`}><form className="input-form" onSubmit={save}>
         <label><span>Nama kamu</span><input value={name} onChange={(event) => setName(event.target.value)} minLength={PARTICIPANT_NAME_MIN} maxLength={PARTICIPANT_NAME_MAX} autoComplete="name" placeholder="Nama panggilan" required /><small>{name.length}/{PARTICIPANT_NAME_MAX} karakter</small></label>
         {mode === "csv" ? <div className="csv-box"><div className="csv-guide"><strong>Gunakan JKT48 Schedule Recap</strong><ol><li>Pasang dan jalankan ekstensi <a href="https://chromewebstore.google.com/detail/jkt48-schedule-recap/amkifnihmncpgmnjaojdmcohmnpalbki" target="_blank" rel="noopener noreferrer">JKT48 Schedule Recap</a>.</li><li>Ekspor CSV dari ekstensi, lalu unggah file lengkapnya di sini.</li><li>Tiket untuk {data.event?.event_date ?? "tanggal event"} akan dipilih otomatis; jalur mengikuti jadwal aplikasi.</li></ol></div><div className="csv-actions"><label className="file-button"><input type="file" accept=".csv,text/csv" onChange={importCsv} />Pilih CSV hasil ekspor</label></div><small>CSV harus berasal dari ekstensi JKT48 Schedule Recap.</small></div>
-          : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Nama lengkap atau nickname…" /></label><div className="picker-ticket-tabs" role="tablist" aria-label="Tipe tiket pilihan manual">{pickerGroups.map(([type, slots]) => <button type="button" role="tab" aria-selected={pickerTicket === type} key={type} onClick={() => setPickerTicket(type)}>{type}<span>{slots.length}</span></button>)}</div><fieldset className="slot-picker"><legend>Pilih jadwal <span>{selected.length} dipilih · {pickerVisible.length} hasil</span></legend>{pickerVisible.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.group_name}</small></span></label>)}{!pickerVisible.length && <p className="slot-picker-empty">Tidak ada member yang cocok.</p>}</fieldset></div>}
+          : <div className="manual-picker"><label className="picker-search"><span>Cari member</span><input type="search" value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder="Nama lengkap atau nickname…" /></label><div className="picker-ticket-tabs" role="tablist" aria-label="Tipe tiket pilihan manual" onKeyDown={navigateTabs}>{pickerGroups.map(([type, slots], index) => <button type="button" id={`picker-tab-${index}`} role="tab" tabIndex={pickerTicket === type ? 0 : -1} aria-controls="picker-panel" aria-selected={pickerTicket === type} key={type} onClick={() => setPickerTicket(type)}>{type}<span>{slots.length}</span></button>)}</div><div className="slot-picker" id="picker-panel" role="tabpanel" tabIndex={0} aria-labelledby={`picker-tab-${TICKET_TABS.indexOf(pickerTicket)}`}><p className="slot-picker-title">Pilih jadwal <span>{selected.length} dipilih · {pickerVisible.length} hasil</span></p>{pickerVisible.map((slot) => <label key={slot.id}><input type="checkbox" checked={selected.includes(slot.id)} onChange={() => toggleSlot(slot.id)} /><span><strong>{slot.member_name}</strong><small>{slot.session_label} · {slot.lane_label || "Jalur menyusul"} · {slot.group_name}</small></span></label>)}{!pickerVisible.length && <p className="slot-picker-empty">Tidak ada member yang cocok.</p>}</div></div>}
         <div className="dialog-actions"><p className="form-feedback" role="status">{feedback}</p><button className="primary-button submit-button" disabled={saving || selected.length === 0 || name.trim().length < PARTICIPANT_NAME_MIN || name.trim().length > PARTICIPANT_NAME_MAX}>{saving ? "Menyimpan…" : `Simpan ${selected.length || ""} jadwal`}</button></div>
-      </form>
+      </form></div>
     </dialog>
   </>;
 }

@@ -15,7 +15,7 @@ body {
 button, input, select { color: inherit; font: inherit; }
 button, select { cursor: pointer; }
 select option { background: var(--color-surface); color: var(--color-ink); }
-button:disabled { cursor: not-allowed; opacity: .48; }
+button:disabled, .file-button:has(input:disabled) { cursor: not-allowed; opacity: .48; }
 a { color: inherit; text-underline-offset: .22em; }
 h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 ::selection { background: var(--color-accent); color: var(--color-accent-ink); }
@@ -69,7 +69,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .session-group { min-width: 0; }
 .session-label { align-items: end; border-bottom: var(--rule-hair) solid var(--color-rule-2); display: flex; justify-content: space-between; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); }
 .session-label > div { display: grid; }
-.session-label h3 { font-family: var(--font-display); font-size: var(--text-lg); letter-spacing: -.035em; line-height: 1; margin: 0 0 var(--space-2xs); }
+.session-label h2 { font-family: var(--font-display); font-size: var(--text-lg); letter-spacing: -.035em; line-height: 1; margin: 0 0 var(--space-2xs); }
 .session-label span { color: var(--color-neutral); font-size: var(--text-sm); }
 .member-grid { display: grid; gap: var(--space-sm); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .member-card { align-items: center; background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); display: flex; flex-direction: column; min-height: 16.5rem; min-width: 0; padding: var(--space-md); text-align: center; transition: border-color var(--dur-micro) var(--ease-out), box-shadow var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
@@ -79,7 +79,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .member-photo span { color: var(--color-neutral); font-family: var(--font-display); font-size: var(--text-md); font-weight: 650; }
 .slot-member { display: grid; min-width: 0; width: 100%; }
 .slot-member span { color: var(--color-neutral); font-size: var(--text-xs); }
-.slot-member h4 { font-family: var(--font-display); font-size: var(--text-base); letter-spacing: -.02em; line-height: 1.2; margin: 0; overflow-wrap: anywhere; }
+.slot-member h3 { font-family: var(--font-display); font-size: var(--text-base); letter-spacing: -.02em; line-height: 1.2; margin: 0; overflow-wrap: anywhere; }
 .slot-people { align-content: start; display: flex; flex: 1; flex-wrap: wrap; gap: var(--space-2xs); justify-content: center; margin-block: var(--space-md); width: 100%; }
 .slot-people small { color: var(--color-neutral); flex-basis: 100%; }
 .slot-people span { background: var(--color-accent-soft); border-radius: var(--radius-control); color: var(--color-accent-deep); font-size: var(--text-sm); max-width: 100%; overflow-wrap: anywhere; padding: var(--space-2xs) var(--space-sm); }
@@ -107,6 +107,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; }
 .mode-tabs button { background: transparent; border-bottom-color: var(--color-rule); min-height: 2.75rem; }
 .mode-tabs button[aria-selected="true"] { background: var(--color-accent-soft); border-bottom-color: var(--color-accent); color: var(--color-accent-deep); font-weight: 650; }
+.input-panel { display: grid; min-height: 0; }
 .input-form { display: grid; gap: var(--space-sm); padding: var(--space-sm); }
 .input-form > label { position: relative; }
 .input-form > label input, .admin-login input { background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-card); min-height: 2.75rem; outline: 2px solid transparent; outline-offset: 1px; padding: 0 var(--space-md); width: 100%; }
@@ -119,8 +120,8 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 .picker-ticket-tabs button[aria-selected="true"] { border-bottom-color: var(--color-accent); color: var(--color-accent-deep); font-weight: 650; }
 .picker-ticket-tabs span { color: var(--color-neutral); font-size: var(--text-xs); margin-left: var(--space-xs); }
 .slot-picker { border: 0; margin: 0; max-height: 19rem; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0; }
-.slot-picker legend { font-weight: 650; margin-bottom: var(--space-xs); width: 100%; }
-.slot-picker legend span { color: var(--color-neutral); float: right; font-size: var(--text-sm); font-weight: 400; }
+.slot-picker-title { font-weight: 650; margin: 0 0 var(--space-xs); width: 100%; }
+.slot-picker-title span { color: var(--color-neutral); float: right; font-size: var(--text-sm); font-weight: 400; }
 .slot-picker label { align-items: center; border-top: var(--rule-hair) solid var(--color-rule); cursor: pointer; display: flex; gap: var(--space-sm); min-height: 2.75rem; padding: var(--space-xs) 0; }
 .slot-picker label > span { display: grid; }
 .slot-picker small { color: var(--color-neutral); }
@@ -294,7 +295,7 @@ h1, h2 { min-width: 0; overflow-wrap: anywhere; }
 
 .session-list { gap: var(--space-3xl); }
 .session-label { align-items: baseline; }
-.session-label h3 { font-size: var(--text-xl); }
+.session-label h2 { font-size: var(--text-xl); }
 .member-grid { gap: var(--space-md); }
 .member-card {
   align-items: stretch;

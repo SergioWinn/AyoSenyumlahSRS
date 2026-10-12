@@ -188,6 +188,82 @@ await adminFailurePage.goto("http://localhost:3000/admin", { waitUntil: "network
 if (!await adminFailurePage.getByText("Data admin gagal dimuat.", { exact: true }).isVisible() || await adminFailurePage.getByText("SQL connection string").count()) throw new Error("Error pemuatan admin tidak ditangani dengan aman.");
 await adminFailurePage.close();
 
+const hardenedPage = await browser.newPage({ viewport: { width: 375, height: 900 }, reducedMotion: "reduce" });
+let refreshFails = false;
+await hardenedPage.route("**/api/timetable", (route) => route.fulfill(refreshFails ? { status: 500, json: { error: "Pembaruan belum berhasil." } } : { json: { configured: true, event: { name: "Festival Oktober" }, slots } }));
+await hardenedPage.route("https://wsrv.nl/**", (route) => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"/>' }));
+await hardenedPage.goto("http://localhost:3000", { waitUntil: "networkidle" });
+for (const tablistName of ["Tipe tiket", "Cara input", "Tipe tiket pilihan manual"]) {
+  if (tablistName === "Cara input") await hardenedPage.getByRole("button", { name: "Isi jadwal", exact: true }).click();
+  const tabs = hardenedPage.getByRole("tablist", { name: tablistName, exact: true }).getByRole("tab");
+  await tabs.first().focus();
+  for (const [key, index] of [["ArrowRight", 1], ["ArrowRight", 0], ["ArrowLeft", 1], ["Home", 0], ["End", 1], ["Home", 0]]) {
+    await hardenedPage.keyboard.press(key);
+    if (!await tabs.nth(index).evaluate((element) => document.activeElement === element && element.getAttribute("aria-selected") === "true" && element.tabIndex === 0)) throw new Error(`${tablistName}: navigasi ${key} gagal.`);
+    const panelLinked = await tabs.nth(index).evaluate((element) => document.getElementById(element.getAttribute("aria-controls"))?.getAttribute("aria-labelledby") === element.id);
+    if (!panelLinked) throw new Error(`${tablistName}: relasi tab/panel tidak valid.`);
+    if (await tabs.evaluateAll((elements) => elements.filter((element) => element.tabIndex === 0).length) !== 1) throw new Error(`${tablistName}: lebih dari satu tab stop.`);
+  }
+}
+if (!await hardenedPage.getByRole("dialog", { name: "Pilih sesi", exact: true }).isVisible()) throw new Error("Dialog belum memiliki nama aksesibel.");
+await hardenedPage.keyboard.press("Escape");
+refreshFails = true;
+await hardenedPage.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+await hardenedPage.getByText(/Jadwal terakhir masih ditampilkan/).waitFor();
+if (await hardenedPage.locator(".member-card").count() !== 4) throw new Error("Refresh gagal menyembunyikan kartu cache.");
+await hardenedPage.screenshot({ path: "scrollcraft/builds/ayo-senyumlah/harden-refresh-mobile.png", fullPage: true });
+refreshFails = false;
+await hardenedPage.getByRole("button", { name: "Coba lagi", exact: true }).click();
+await hardenedPage.locator(".refresh-status.is-online").waitFor();
+if (await hardenedPage.getByText(/Jadwal terakhir masih ditampilkan/).count()) throw new Error("Peringatan cache tidak hilang setelah pemulihan.");
+await hardenedPage.close();
+
+const guardedAdmin = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+await guardedAdmin.addInitScript(() => {
+  const scrollIntoView = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (options) { window.lastEditScroll = options; return scrollIntoView.call(this, options); };
+});
+const guardedCalls = [];
+let actionStatus = 500;
+await guardedAdmin.route("**/api/admin/status", (route) => route.fulfill({ json: { authenticated: true, event: { name: "Festival Oktober" }, slots, sources: [{ id: "s", group_name: "JKT48", ticket_type: "2-Shot", exclusive_code: "test" }] } }));
+for (const endpoint of ["schedules", "sync", "import"]) await guardedAdmin.route(`**/api/admin/${endpoint}`, async (route) => {
+  guardedCalls.push(`${endpoint}:${route.request().method()}`);
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  await route.fulfill({ status: actionStatus, json: actionStatus === 200 ? { ok: true, count: 1, results: [{ ok: true }] } : { error: "Permintaan gagal untuk pengujian." } });
+});
+await guardedAdmin.goto("http://localhost:3000/admin", { waitUntil: "networkidle" });
+await guardedAdmin.getByRole("button", { name: "Edit", exact: true }).first().click();
+if (!await guardedAdmin.getByLabel("Nama peserta").evaluate((element) => document.activeElement === element && window.lastEditScroll?.behavior === "instant")) throw new Error("Edit tidak memindahkan fokus atau mengabaikan reduced motion.");
+await guardedAdmin.getByRole("button", { name: "Batal", exact: true }).click();
+await guardedAdmin.getByLabel("Nama peserta").fill("Raka");
+await guardedAdmin.locator(".admin-schedule-form select").selectOption("2");
+await guardedAdmin.locator(".admin-schedule-form").evaluate((form) => { for (let i = 0; i < 10; i++) form.requestSubmit(); });
+await guardedAdmin.getByText("Permintaan gagal untuk pengujian.", { exact: true }).waitFor();
+if (guardedCalls.join(",") !== "schedules:POST" || await guardedAdmin.getByLabel("Nama peserta").inputValue() !== "Raka") throw new Error("Simpan admin terduplikasi atau input hilang saat gagal.");
+for (const [label, call] of [["Sinkronkan", "sync:POST"], ["Yakin hapus?", "schedules:DELETE"]]) {
+  if (label === "Yakin hapus?") await guardedAdmin.getByRole("button", { name: "Hapus", exact: true }).first().click();
+  const button = guardedAdmin.getByRole("button", { name: label, exact: true });
+  const before = guardedCalls.length;
+  await button.evaluate((element) => { for (let i = 0; i < 10; i++) element.click(); });
+  await guardedAdmin.waitForFunction(() => [...document.querySelectorAll("button")].every((element) => !element.disabled));
+  if (guardedCalls.length !== before + 1 || guardedCalls.at(-1) !== call) throw new Error(`${label}: permintaan terduplikasi.`);
+}
+await guardedAdmin.locator('.source-actions input[type="file"]').setInputFiles({ name: "invalid.json", mimeType: "application/json", buffer: Buffer.from("invalid") });
+await guardedAdmin.getByText("File bukan JSON yang valid. Pilih file hasil salinan API.", { exact: true }).waitFor();
+await guardedAdmin.locator('.source-actions input[type="file"]').setInputFiles({ name: "snapshot.json", mimeType: "application/json", buffer: Buffer.from("{}") });
+await guardedAdmin.getByText("Permintaan gagal untuk pengujian.", { exact: true }).waitFor();
+if (guardedCalls.at(-1) !== "import:POST") throw new Error("Impor admin tidak dijalankan.");
+actionStatus = 200;
+await guardedAdmin.getByRole("button", { name: "Tambah jadwal", exact: true }).click();
+await guardedAdmin.getByText("Jadwal ditambahkan.", { exact: true }).waitFor();
+await guardedAdmin.getByLabel("Nama peserta").fill("Raka");
+await guardedAdmin.locator(".admin-schedule-form select").selectOption("2");
+actionStatus = 401;
+await guardedAdmin.getByRole("button", { name: "Tambah jadwal", exact: true }).click();
+await guardedAdmin.getByRole("heading", { name: "Masuk admin" }).waitFor();
+if (await guardedAdmin.getByRole("button", { name: "Masuk", exact: true }).isDisabled()) throw new Error("Login tetap terkunci setelah sesi berakhir.");
+await guardedAdmin.close();
+
 const longNameSlots = [{ ...slots[1], schedules: [{ id: "long-name", participant_name: "N".repeat(40) }] }];
 for (const { width, height } of [
   { width: 320, height: 780 }, { width: 375, height: 900 },
@@ -226,4 +302,4 @@ for (const { width, height } of [
 
 await browser.close();
 if (consoleErrors.length) throw new Error(consoleErrors.join("\n"));
-console.log("Visual check passed: 6 page viewports, 7 dense-dialog viewports, admin CRUD, safe error states, and 7 responsive long-name/source-action viewports with synthesized touch.");
+console.log("Visual check passed: responsive pages/dialogs, admin CRUD, safe errors, keyboard tabs/dialog, refresh recovery, guarded admin actions, and synthesized touch.");
